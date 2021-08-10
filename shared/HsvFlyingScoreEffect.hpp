@@ -20,6 +20,7 @@
 #include "GlobalNamespace/NoteCutInfo.hpp"
 #include "GlobalNamespace/ISaberSwingRatingCounter.hpp"
 
+#define GET_FIND_METHOD(mPtr) il2cpp_utils::il2cpp_type_check::MetadataGetter<mPtr>::get()
 
 using namespace UnityEngine;
 
@@ -27,11 +28,10 @@ DECLARE_CLASS_CODEGEN(HitScore, HsvFlyingScoreEffect, GlobalNamespace::FlyingSco
     DECLARE_INSTANCE_FIELD(HitScore::JudgmentService*, _judgmentService);
     DECLARE_INSTANCE_FIELD(GlobalNamespace::NoteCutInfo, _noteCutInfo);
     DECLARE_INSTANCE_METHOD(void, Construct, HitScore::JudgmentService* judgmentService);
-    DECLARE_OVERRIDE_METHOD(void, InitAndPresent, il2cpp_utils::FindMethod("", "FlyingScoreEffect", "InitAndPresent"), GlobalNamespace::NoteCutInfo noteCutInfo, int multiplier, float duration, Vector3 targetPos, Quaternion rotation, Color color);
-    DECLARE_OVERRIDE_METHOD(void, HandleSaberSwingRatingCounterDidChange, il2cpp_utils::FindMethod("", "FlyingScoreEffect", "HandleSaberSwingRatingCounterDidChange"), GlobalNamespace::ISaberSwingRatingCounter* swingRatingCounter, float rating);
-    DECLARE_OVERRIDE_METHOD(void, HandleSaberSwingRatingCounterDidFinish, il2cpp_utils::FindMethod("", "FlyingScoreEffect", "HandleSaberSwingRatingCounterDidFinish"), GlobalNamespace::ISaberSwingRatingCounter* swingRatingCounter);
+    DECLARE_INSTANCE_METHOD(void, Init, GlobalNamespace::NoteCutInfo noteCutInfo, int multiplier, float duration, Vector3 targetPos, Quaternion rotation, Color color);
     DECLARE_INSTANCE_METHOD(void, Judge, GlobalNamespace::ISaberSwingRatingCounter* swingRatingCounter, int assumedAfterCutScore);
 )
 
 Configuration& getConfig();
 Logger& getLogger();
+

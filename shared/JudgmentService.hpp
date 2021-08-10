@@ -23,7 +23,7 @@
 DECLARE_CLASS_CODEGEN(HitScore, JudgmentService, UnityEngine::MonoBehaviour,
     DECLARE_INSTANCE_METHOD(Il2CppString*, JudgeText, int score, int before, int after, int accuracy, float timeDependence);
     DECLARE_INSTANCE_METHOD(UnityEngine::Color, JudgeColor, int score, int before, int after, int accuracy, float timeDependence);
-    DECLARE_INSTANCE_METHOD(Il2CppString*, DisplayModeFormat, int score, int before, int after, int accuracy, float timeDependence);
+    //DECLARE_INSTANCE_METHOD(Il2CppString*, DisplayModeFormat, int score, int before, int after, int accuracy, float timeDependence);
 )
 
 DECLARE_CLASS_CODEGEN(HitScore, Judgment, UnityEngine::MonoBehaviour,

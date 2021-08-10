@@ -38,6 +38,7 @@
 #include "GlobalNamespace/ScoreModel.hpp"
 
 #include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
+#include "beatsaber-hook/shared/utils/byref.hpp"
 #include "custom-types/shared/types.hpp"
 #include "custom-types/shared/macros.hpp"
 #include "custom-types/shared/register.hpp"
@@ -53,19 +54,25 @@ using namespace GlobalNamespace;
 using namespace QuestUI;
 using namespace UnityEngine;
 
-DEFINE_TYPE(HitScore, JudgmentService);
-DEFINE_TYPE(HitScore, Judgment);
 DEFINE_TYPE(HitScore, HsvFlyingScoreEffect);
 
 void HitScore::HsvFlyingScoreEffect::Construct(HitScore::JudgmentService *judgmentService) {
     _judgmentService = judgmentService;
+    getLogger().info("CONSTRUCTION COMPELTE");
 }
 
-void HitScore::HsvFlyingScoreEffect::InitAndPresent(NoteCutInfo noteCutInfo, int multiplier, float duration, Vector3 targetPos, Quaternion rotation, Color color) {
+MAKE_HOOK_MATCH(InitAndPresent, &FlyingScoreEffect::InitAndPresent, void, FlyingScoreEffect* self, ByRef<GlobalNamespace::NoteCutInfo> noteCutInfo, int multiplier, float duration, Vector3 targetPos, Quaternion rotation, Color color) {
+    auto selfCast = il2cpp_utils::try_cast<HitScore::HsvFlyingScoreEffect>(self);
+    if (selfCast) {
+        selfCast.value()->Init(noteCutInfo.heldRef, multiplier, duration, targetPos, rotation, color);
+    } else {
+        InitAndPresent(self, noteCutInfo, multiplier, duration, targetPos, rotation, color);
+    }
+}
+
+void HitScore::HsvFlyingScoreEffect::Init(GlobalNamespace::NoteCutInfo noteCutInfo, int multiplier, float duration, Vector3 targetPos, Quaternion rotation, Color color) {
     _noteCutInfo = noteCutInfo;
-
-    //no fixed pos config cuz quest ui doesn't support setting vector 3s
-
+    getLogger().info("INIT ACTUALLY HAPPENED");
     _set__color(color);
     _set__saberSwingRatingCounter(noteCutInfo.swingRatingCounter);
     _set__cutDistanceToCenter(noteCutInfo.cutDistanceToCenter);
@@ -77,15 +84,28 @@ void HitScore::HsvFlyingScoreEffect::InitAndPresent(NoteCutInfo noteCutInfo, int
     Judge(_noteCutInfo.swingRatingCounter, 30);
 }
 
-void HitScore::HsvFlyingScoreEffect::HandleSaberSwingRatingCounterDidChange(GlobalNamespace::ISaberSwingRatingCounter* swingRatingCounter, float rating) {
-    Judge(swingRatingCounter, 0);
+MAKE_HOOK_MATCH(HandleSwingChange, &FlyingScoreEffect::HandleSaberSwingRatingCounterDidChange, void, FlyingScoreEffect* self, GlobalNamespace::ISaberSwingRatingCounter* swingRatingCounter, float rating) {
+    getLogger().info("Try to JUDGE Change");
+    auto selfCast = il2cpp_utils::try_cast<HitScore::HsvFlyingScoreEffect>(self);
+    if (selfCast) {
+        selfCast.value()->Judge(swingRatingCounter, 0);
+    } else {
+        HandleSwingChange(self, swingRatingCounter, rating);
+    }
 }
 
-void HitScore::HsvFlyingScoreEffect::HandleSaberSwingRatingCounterDidFinish(GlobalNamespace::ISaberSwingRatingCounter* swingRatingCounter) {
-    Judge(swingRatingCounter, 0);
+MAKE_HOOK_MATCH(HandleSwingFinish, &FlyingScoreEffect::HandleSaberSwingRatingCounterDidFinish, void, FlyingScoreEffect* self, GlobalNamespace::ISaberSwingRatingCounter* swingRatingCounter) {
+    getLogger().info("Try to JUDGE FInish");
+    auto selfCast = il2cpp_utils::try_cast<HitScore::HsvFlyingScoreEffect>(self);
+    if (selfCast) {
+        selfCast.value()->Judge(swingRatingCounter, 0);
+    } else {
+        HandleSwingFinish(self, swingRatingCounter);
+    }
 }
 
 void HitScore::HsvFlyingScoreEffect::Judge(GlobalNamespace::ISaberSwingRatingCounter *swingRatingCounter, int assumedAfterCutScore) {
+    getLogger().info("JUDGE");
     int before;
     int after;
     int accuracy;
@@ -96,4 +116,10 @@ void HitScore::HsvFlyingScoreEffect::Judge(GlobalNamespace::ISaberSwingRatingCou
     float timeD = Mathf::Abs(_noteCutInfo.cutNormal.z);
     text->set_text(_judgmentService->JudgeText(total, before, after, accuracy, timeD));
     _set__color(_judgmentService->JudgeColor(total, before, after, accuracy, timeD));
+}
+
+void HitScore::InstallHooks() {
+    INSTALL_HOOK(getLogger(), InitAndPresent);
+    INSTALL_HOOK(getLogger(), HandleSwingChange);
+    INSTALL_HOOK(getLogger(), HandleSwingFinish);
 }

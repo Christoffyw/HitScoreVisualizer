@@ -59,7 +59,6 @@ using namespace UnityEngine;
 
 DEFINE_TYPE(HitScore, JudgmentService);
 DEFINE_TYPE(HitScore, Judgment);
-DEFINE_TYPE(HitScore, HsvFlyingScoreEffect);
 
 Il2CppString* HitScore::JudgmentService::JudgeText(int score, int before, int after, int accuracy, float timeDependence) {
     //Temp Judgment setup

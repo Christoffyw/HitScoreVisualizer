@@ -50,9 +50,6 @@ using namespace QuestUI;
 using namespace UnityEngine;
 
 DEFINE_TYPE(HitScore, Main);
-DEFINE_TYPE(HitScore, JudgmentService);
-DEFINE_TYPE(HitScore, Judgment);
-DEFINE_TYPE(HitScore, HsvFlyingScoreEffect);
 
 static ModInfo modInfo; // Stores the ID and version of our mod, and is sent to the modloader upon startup
 
@@ -91,20 +88,59 @@ MAKE_HOOK_MATCH(FlyingScoreEffectHook, &GlobalNamespace::EffectPoolsManualInstal
 
     HitScore::HsvFlyingScoreEffect* hsvFlyingScoreEffect = gameObject->GetComponent<HitScore::HsvFlyingScoreEffect*>();
 
-    if(!hsvFlyingScoreEffect) {
-        HitScore::HsvFlyingScoreEffect* hsvFlyingScoreEffect = gameObject->AddComponent<HitScore::HsvFlyingScoreEffect*>();
+    if(gameObject != nullptr) {
+        if(!hsvFlyingScoreEffect) {
+            HitScore::HsvFlyingScoreEffect* hsvFlyingScoreEffect = gameObject->AddComponent<HitScore::HsvFlyingScoreEffect*>();
 
-        FlyingObjectEffect* flyingObjectEffect = (FlyingObjectEffect*) flyingScoreEffect;
+            FlyingObjectEffect* flyingObjectEffect = flyingScoreEffect;
 
-        hsvFlyingScoreEffect->_set__moveAnimationCurve(flyingObjectEffect->moveAnimationCurve);
-        hsvFlyingScoreEffect->_set__shakeFrequency(flyingObjectEffect->shakeFrequency);
-        hsvFlyingScoreEffect->_set__shakeStrength(flyingObjectEffect->shakeStrength);
-        hsvFlyingScoreEffect->_set__shakeStrengthAnimationCurve(flyingObjectEffect->shakeStrengthAnimationCurve);
+            if(flyingScoreEffect != nullptr) {
+                getLogger().info((flyingScoreEffect->moveAnimationCurve ? "move anim true": "false"));
+                getLogger().info((flyingScoreEffect->shakeFrequency ? "shake freq true": "false"));
+                getLogger().info((flyingScoreEffect->shakeStrength ? "shake streng true": "false"));
+                getLogger().info((flyingScoreEffect->shakeStrengthAnimationCurve ? "shake anim true": "false"));
+                getLogger().info((flyingScoreEffect->fadeAnimationCurve ? "fade anim true": "false"));
+                getLogger().info((flyingScoreEffect->text ? "text true": "false"));
+                getLogger().info((flyingScoreEffect->maxCutDistanceScoreIndicator ? "max cut true": "false"));
 
-        hsvFlyingScoreEffect->_set__text(flyingScoreEffect->text);
-        hsvFlyingScoreEffect->_set__fadeAnimationCurve(flyingScoreEffect->fadeAnimationCurve);
-        hsvFlyingScoreEffect->_set__maxCutDistanceScoreIndicator(flyingScoreEffect->maxCutDistanceScoreIndicator);
+                getLogger().info((hsvFlyingScoreEffect->moveAnimationCurve ? "move anim HSV": "false"));
+                getLogger().info((hsvFlyingScoreEffect->shakeFrequency ? "shake freq HSV": "false"));
+                getLogger().info((hsvFlyingScoreEffect->shakeStrength ? "shake streng HSV": "false"));
+                getLogger().info((hsvFlyingScoreEffect->shakeStrengthAnimationCurve ? "shake anim HSV": "false"));
+                getLogger().info((hsvFlyingScoreEffect->fadeAnimationCurve ? "fade anim HSV": "false"));
+                getLogger().info((hsvFlyingScoreEffect->text ? "text HSV": "false"));
+                getLogger().info((hsvFlyingScoreEffect->maxCutDistanceScoreIndicator ? "max cut HSV": "false"));
 
+                hsvFlyingScoreEffect->moveAnimationCurve = flyingScoreEffect->moveAnimationCurve;
+                hsvFlyingScoreEffect->shakeFrequency = flyingScoreEffect->shakeFrequency;
+                hsvFlyingScoreEffect->shakeStrength = flyingScoreEffect->shakeStrength;
+                hsvFlyingScoreEffect->shakeStrengthAnimationCurve = flyingScoreEffect->shakeStrengthAnimationCurve;
+                hsvFlyingScoreEffect->fadeAnimationCurve = flyingScoreEffect->fadeAnimationCurve;
+                hsvFlyingScoreEffect->text = flyingScoreEffect->text;
+                hsvFlyingScoreEffect->maxCutDistanceScoreIndicator = flyingScoreEffect->maxCutDistanceScoreIndicator;
+
+                HitScore::JudgmentService* judgmentService = gameObject->AddComponent<HitScore::JudgmentService*>();
+
+                hsvFlyingScoreEffect->Construct(judgmentService);
+
+                /*if(flyingScoreEffect->moveAnimationCurve != nullptr)
+                    hsvFlyingScoreEffect->_set__moveAnimationCurve(flyingObjectEffect->moveAnimationCurve);
+                if(flyingScoreEffect->shakeFrequency)
+                    hsvFlyingScoreEffect->_set__shakeFrequency(flyingObjectEffect->shakeFrequency);
+                if(flyingScoreEffect->shakeStrength)
+                    hsvFlyingScoreEffect->_set__shakeStrength(flyingObjectEffect->shakeStrength);
+                if(flyingScoreEffect->shakeStrengthAnimationCurve != nullptr)
+                    hsvFlyingScoreEffect->_set__shakeStrengthAnimationCurve(flyingObjectEffect->shakeStrengthAnimationCurve);
+
+                if(flyingScoreEffect->text != nullptr)
+                    hsvFlyingScoreEffect->_set__text(flyingScoreEffect->text);
+                if(flyingScoreEffect->fadeAnimationCurve != nullptr)
+                    hsvFlyingScoreEffect->_set__fadeAnimationCurve(flyingScoreEffect->fadeAnimationCurve);
+                if(flyingScoreEffect->maxCutDistanceScoreIndicator != nullptr)
+                    hsvFlyingScoreEffect->_set__maxCutDistanceScoreIndicator(flyingScoreEffect->maxCutDistanceScoreIndicator);
+                    */
+            }
+        }
     }
 
     FlyingScoreEffectHook(self, diContainer, shortBeatEffect);
@@ -145,6 +181,7 @@ extern "C" void load() {
   il2cpp_functions::Init();
   QuestUI::Init();
   QuestUI::Register::RegisterModSettingsViewController(modInfo, DidActivate);
+  HitScore::InstallHooks();
   INSTALL_HOOK(getLogger(), FlyingScoreEffectHook);
   custom_types::Register::AutoRegister();
 }
