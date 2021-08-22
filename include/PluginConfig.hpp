@@ -11,13 +11,9 @@
 DECLARE_CONFIG(PluginConfig,
 
 CONFIG_VALUE(IsEnabled, bool, "Mod Enabled", true);
-CONFIG_VALUE(MaxSpeed, float, "Max Scroll Speed", 600);
-CONFIG_VALUE(Accel, float, "Scroll Acceleration", 1.5);
-CONFIG_VALUE(IsLinear, bool, "Scrolling is Linear", true);
+CONFIG_VALUE(IsFormat, bool, "Format Mode", true);
     CONFIG_INIT_FUNCTION(
-            CONFIG_INIT_VALUE(MaxSpeed);
-            CONFIG_INIT_VALUE(Accel);
-            CONFIG_INIT_VALUE(IsLinear);
+            CONFIG_INIT_VALUE(IsFormat);
             CONFIG_INIT_VALUE(IsEnabled);
     )
 )

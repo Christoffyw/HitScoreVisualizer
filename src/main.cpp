@@ -1,6 +1,6 @@
 #include "PluginConfig.hpp"
 #include "main.hpp"
-#include "HsvFlyingScoreEffect.hpp"
+#include "JudgmentService.hpp"
 #include "UnityEngine/GameObject.hpp"
 #include "UnityEngine/Transform.hpp"
 #include "UnityEngine/SceneManagement/SceneManager.hpp"
@@ -32,16 +32,28 @@
 #include "GlobalNamespace/EffectPoolsManualInstaller.hpp"
 #include "GlobalNamespace/FlyingScoreEffect.hpp"
 #include "GlobalNamespace/FlyingObjectEffect.hpp"
+#include "GlobalNamespace/FlyingScoreEffect_Pool.hpp"
+#include "GlobalNamespace/NoteCutInfo.hpp"
+#include "GlobalNamespace/ISaberSwingRatingCounter.hpp"
+#include "GlobalNamespace/ScoreModel.hpp"
+#include "GlobalNamespace/FlyingScoreSpawner.hpp"
+#include "GlobalNamespace/BeatmapObjectExecutionRatingsRecorder_CutScoreHandler.hpp"
 
 #include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
+#include "beatsaber-hook/shared/utils/byref.hpp"
 #include "custom-types/shared/types.hpp"
 #include "custom-types/shared/macros.hpp"
 #include "custom-types/shared/register.hpp"
 #include "questui/shared/QuestUI.hpp"
 #include "questui/shared/BeatSaberUI.hpp"
 #include "Zenject/DiContainer.hpp"
+#include "Zenject/IMemoryPool.hpp"
+#include "Zenject/MemoryPoolBase_1.hpp"
+#include "Zenject/MonoMemoryPool_1.hpp"
+#include "System/Action_1.hpp"
 #include <iostream>
 #include <string>
+#include <utility>
 
 using namespace std;
 using namespace HMUI;
@@ -50,6 +62,7 @@ using namespace QuestUI;
 using namespace UnityEngine;
 
 DEFINE_TYPE(HitScore, Main);
+DEFINE_TYPE(HitScore, HSVRatingCounter);
 
 static ModInfo modInfo; // Stores the ID and version of our mod, and is sent to the modloader upon startup
 
@@ -79,82 +92,131 @@ extern "C" void setup(ModInfo& info) {
     getLogger().info("Completed setup!");
 }
 
+HitScore::JudgmentService* judgmentService;
+FlyingScoreEffect* currentEffect = nullptr;
+std::map<GlobalNamespace::ISaberSwingRatingCounter*, swingRatingCounter_context> swingRatingMap;
 
+void HitScore::HSVRatingCounter::HandleSaberSwingRatingCounterDidFinish(GlobalNamespace::ISaberSwingRatingCounter* saberSwingRatingCounter) {
+    this->swingRatingCounterFunction(saberSwingRatingCounter);
+}
+
+void JudgeNoContext(FlyingScoreEffect* self, NoteCutInfo& noteCutInfo) {
+    int before;
+    int after;
+    int accuracy;
+    ScoreModel::RawScoreWithoutMultiplier(noteCutInfo.swingRatingCounter, noteCutInfo.cutDistanceToCenter, byref(before), byref(after), byref(accuracy));
+    int total = before + after + accuracy;
+    float timeDependence = Mathf::Abs(noteCutInfo.cutNormal.z);
+    self->text->set_text(il2cpp_utils::newcsstr(judgmentService->JudgeText(total, before, after, accuracy, timeDependence)));
+    self->text->set_color(judgmentService->JudgeColor(total, before, after, accuracy, timeDependence));
+    self->color = judgmentService->JudgeColor(total, before, after, accuracy, timeDependence);
+    //noteCutInfo.swingRatingCounter->UnregisterDidFinishReceiver(reinterpret_cast<GlobalNamespace::ISaberSwingRatingCounterDidFinishReceiver*>(hsvRatingCounter));
+}
+
+void Judge(ISaberSwingRatingCounter* counter) {
+
+    auto itr = swingRatingMap.find(counter);
+    if(itr == swingRatingMap.end()) {
+        getLogger().info("counter was not found in swingRatingMap!");
+        return;
+    }
+    auto context = itr->second;
+
+    int before;
+    int after;
+    int accuracy;
+
+
+    ScoreModel::RawScoreWithoutMultiplier(context.noteCutInfo.swingRatingCounter, context.noteCutInfo.cutDistanceToCenter, byref(before), byref(after), byref(accuracy));
+    int total = before + after + accuracy;
+    float timeDependence = Mathf::Abs(context.noteCutInfo.cutNormal.z);
+    if(context.flyingScoreEffect) {
+        //context.flyingScoreEffect->maxCutDistanceScoreIndicator->set_enabled(true);
+        context.flyingScoreEffect->text->set_text(il2cpp_utils::newcsstr(judgmentService->JudgeText(total, before, after, accuracy, timeDependence)));
+        context.flyingScoreEffect->text->set_color(judgmentService->JudgeColor(total, before, after, accuracy, timeDependence));
+        context.flyingScoreEffect->color = judgmentService->JudgeColor(total, before, after, accuracy, timeDependence);
+       swingRatingMap.erase(itr);
+    }
+    //noteCutInfo.swingRatingCounter->UnregisterDidFinishReceiver(reinterpret_cast<GlobalNamespace::ISaberSwingRatingCounterDidFinishReceiver*>(hsvRatingCounter));
+}
+
+MAKE_HOOK_MATCH(InitFlyingScoreEffect, &FlyingScoreEffect::InitAndPresent, void, FlyingScoreEffect* self, ByRef<NoteCutInfo> noteCutInfo, int multiplier, float duration, Vector3 targetPos, Quaternion rotation, Color color) {
+    if(getPluginConfig().IsEnabled.GetValue()) {
+        if(currentEffect) {
+            currentEffect->duration = 0;
+        }
+        currentEffect = self;
+
+
+    }
+
+    InitFlyingScoreEffect(self, noteCutInfo, multiplier, duration, targetPos, rotation, color);
+
+    if(getPluginConfig().IsEnabled.GetValue()) {
+        duration = 0.7;
+        self->text->set_text(il2cpp_utils::newcsstr(""));
+        self->maxCutDistanceScoreIndicator->set_enabled(false);
+
+        //
+        //hsvRatingCounter->swingRatingCounterFunction = [=](GlobalNamespace::ISaberSwingRatingCounter* saber) { Judge(self, noteCutInfo.heldRef, hsvRatingCounter); };
+
+        //JudgeNoContext(self, noteCutInfo.heldRef);
+
+        auto counter = noteCutInfo.heldRef.swingRatingCounter;
+
+        GlobalNamespace::NoteCutInfo info = noteCutInfo.heldRef;
+
+        swingRatingMap.insert(std::make_pair(counter, swingRatingCounter_context{info, self}));
+
+
+
+        //noteCutInfo.heldRef.swingRatingCounter->UnregisterDidFinishReceiver(reinterpret_cast<GlobalNamespace::ISaberSwingRatingCounterDidFinishReceiver*>(hsvRatingCounter));
+        //noteCutInfo.heldRef.swingRatingCounter->RegisterDidFinishReceiver(reinterpret_cast<GlobalNamespace::ISaberSwingRatingCounterDidFinishReceiver*>(hsvRatingCounter));
+    }
+}
+
+MAKE_HOOK_MATCH(HandleSwingFinish, &GlobalNamespace::BeatmapObjectExecutionRatingsRecorder_CutScoreHandler::HandleSaberSwingRatingCounterDidFinish, void, GlobalNamespace::BeatmapObjectExecutionRatingsRecorder_CutScoreHandler* self, ISaberSwingRatingCounter* counter) {
+    HandleSwingFinish(self, counter);
+    Judge(counter);
+}
 
 MAKE_HOOK_MATCH(FlyingScoreEffectHook, &GlobalNamespace::EffectPoolsManualInstaller::ManualInstallBindings, void, GlobalNamespace::EffectPoolsManualInstaller* self, Zenject::DiContainer* diContainer, bool shortBeatEffect) {
     GameObject* gameObject = self->flyingScoreEffectPrefab->get_gameObject();
 
     FlyingScoreEffect* flyingScoreEffect = gameObject->GetComponent<FlyingScoreEffect*>();
 
-    HitScore::HsvFlyingScoreEffect* hsvFlyingScoreEffect = gameObject->GetComponent<HitScore::HsvFlyingScoreEffect*>();
-
     if(gameObject != nullptr) {
-        if(!hsvFlyingScoreEffect) {
-            HitScore::HsvFlyingScoreEffect* hsvFlyingScoreEffect = gameObject->AddComponent<HitScore::HsvFlyingScoreEffect*>();
 
-            FlyingObjectEffect* flyingObjectEffect = flyingScoreEffect;
+        FlyingObjectEffect* flyingObjectEffect = flyingScoreEffect;
 
-            if(flyingScoreEffect != nullptr) {
-                getLogger().info((flyingScoreEffect->moveAnimationCurve ? "move anim true": "false"));
-                getLogger().info((flyingScoreEffect->shakeFrequency ? "shake freq true": "false"));
-                getLogger().info((flyingScoreEffect->shakeStrength ? "shake streng true": "false"));
-                getLogger().info((flyingScoreEffect->shakeStrengthAnimationCurve ? "shake anim true": "false"));
-                getLogger().info((flyingScoreEffect->fadeAnimationCurve ? "fade anim true": "false"));
-                getLogger().info((flyingScoreEffect->text ? "text true": "false"));
-                getLogger().info((flyingScoreEffect->maxCutDistanceScoreIndicator ? "max cut true": "false"));
-
-                getLogger().info((hsvFlyingScoreEffect->moveAnimationCurve ? "move anim HSV": "false"));
-                getLogger().info((hsvFlyingScoreEffect->shakeFrequency ? "shake freq HSV": "false"));
-                getLogger().info((hsvFlyingScoreEffect->shakeStrength ? "shake streng HSV": "false"));
-                getLogger().info((hsvFlyingScoreEffect->shakeStrengthAnimationCurve ? "shake anim HSV": "false"));
-                getLogger().info((hsvFlyingScoreEffect->fadeAnimationCurve ? "fade anim HSV": "false"));
-                getLogger().info((hsvFlyingScoreEffect->text ? "text HSV": "false"));
-                getLogger().info((hsvFlyingScoreEffect->maxCutDistanceScoreIndicator ? "max cut HSV": "false"));
-
-                hsvFlyingScoreEffect->moveAnimationCurve = flyingScoreEffect->moveAnimationCurve;
-                hsvFlyingScoreEffect->shakeFrequency = flyingScoreEffect->shakeFrequency;
-                hsvFlyingScoreEffect->shakeStrength = flyingScoreEffect->shakeStrength;
-                hsvFlyingScoreEffect->shakeStrengthAnimationCurve = flyingScoreEffect->shakeStrengthAnimationCurve;
-                hsvFlyingScoreEffect->fadeAnimationCurve = flyingScoreEffect->fadeAnimationCurve;
-                hsvFlyingScoreEffect->text = flyingScoreEffect->text;
-                hsvFlyingScoreEffect->maxCutDistanceScoreIndicator = flyingScoreEffect->maxCutDistanceScoreIndicator;
-
-                HitScore::JudgmentService* judgmentService = gameObject->AddComponent<HitScore::JudgmentService*>();
-
-                hsvFlyingScoreEffect->Construct(judgmentService);
-
-                /*if(flyingScoreEffect->moveAnimationCurve != nullptr)
-                    hsvFlyingScoreEffect->_set__moveAnimationCurve(flyingObjectEffect->moveAnimationCurve);
-                if(flyingScoreEffect->shakeFrequency)
-                    hsvFlyingScoreEffect->_set__shakeFrequency(flyingObjectEffect->shakeFrequency);
-                if(flyingScoreEffect->shakeStrength)
-                    hsvFlyingScoreEffect->_set__shakeStrength(flyingObjectEffect->shakeStrength);
-                if(flyingScoreEffect->shakeStrengthAnimationCurve != nullptr)
-                    hsvFlyingScoreEffect->_set__shakeStrengthAnimationCurve(flyingObjectEffect->shakeStrengthAnimationCurve);
-
-                if(flyingScoreEffect->text != nullptr)
-                    hsvFlyingScoreEffect->_set__text(flyingScoreEffect->text);
-                if(flyingScoreEffect->fadeAnimationCurve != nullptr)
-                    hsvFlyingScoreEffect->_set__fadeAnimationCurve(flyingScoreEffect->fadeAnimationCurve);
-                if(flyingScoreEffect->maxCutDistanceScoreIndicator != nullptr)
-                    hsvFlyingScoreEffect->_set__maxCutDistanceScoreIndicator(flyingScoreEffect->maxCutDistanceScoreIndicator);
-                    */
-            }
+        if(flyingScoreEffect != nullptr) {
+            judgmentService = CRASH_UNLESS(il2cpp_utils::New<HitScore::JudgmentService*>());
         }
     }
 
     FlyingScoreEffectHook(self, diContainer, shortBeatEffect);
 }
 
+MAKE_HOOK_MATCH(FlyingScoreEffectFinish, &GlobalNamespace::FlyingScoreSpawner::HandleFlyingObjectEffectDidFinish, void, FlyingScoreSpawner* self, FlyingObjectEffect* flyingObjectEffect) {
+    FlyingScoreEffectFinish(self, flyingObjectEffect);
+    if(flyingObjectEffect == currentEffect) {
+        currentEffect = nullptr;
+    }
+}
+
 void HitScore::Main::Update() {
 
 }
+
+int value = 0;
 
 void DidActivate(HMUI::ViewController* self, bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling){
     getLogger().info("DidActivate: %p, %d, %d, %d", self, firstActivation, addedToHierarchy, screenSystemEnabling);
 
 
-    /*
+
+
+
     if(firstActivation) {
         self->get_gameObject()->AddComponent<HMUI::Touchable*>();
         self->get_gameObject()->AddComponent<HitScore::Main*>();
@@ -163,25 +225,25 @@ void DidActivate(HMUI::ViewController* self, bool firstActivation, bool addedToH
         auto* textGrid = container;
         //        textGrid->set_spacing(1);
 
-        QuestUI::BeatSaberUI::CreateText(textGrid->get_transform(), "Faster Scroll Mod settings.");
-        QuestUI::BeatSaberUI::AddHoverHint(AddConfigValueToggle(textGrid->get_transform(), getPluginConfig().IsStock)->get_gameObject(),"Toggles whether the mod is active or not.");
+        QuestUI::BeatSaberUI::CreateText(textGrid->get_transform(), "Hit Score Visualizer settings.");
+        QuestUI::BeatSaberUI::AddHoverHint(AddConfigValueToggle(textGrid->get_transform(), getPluginConfig().IsEnabled)->get_gameObject(),"Toggles whether the mod is active or not.");
 
         //        buttonsGrid->set_spacing(1);
 
-        auto* floatGrid = container;
-
-        QuestUI::BeatSaberUI::AddHoverHint(AddConfigValueIncrementFloat(floatGrid->get_transform(), getPluginConfig().MaxSpeed, 0, 10, 30, 1000)->get_gameObject(),"Changes the speed of scrolling with the joystick. Default: 600");
-        QuestUI::BeatSaberUI::AddHoverHint(AddConfigValueIncrementFloat(floatGrid->get_transform(), getPluginConfig().Accel, 1, 0.1, 0.5, 5)->get_gameObject(),"Changes the acceleration speed of scrolling with the joystick. Default: 1.5");
-        QuestUI::BeatSaberUI::AddHoverHint(AddConfigValueToggle(floatGrid->get_transform(), getPluginConfig().IsLinear)->get_gameObject(),"Toggles whether you want to use acceleration or not.");
+        //QuestUI::BeatSaberUI::AddHoverHint(AddConfigValueIncrementFloat(textGrid->get_transform(), getPluginConfig().MaxSpeed, 0, 10, 30, 1000)->get_gameObject(),"Changes the speed of scrolling with the joystick. Default: 600");
+        //QuestUI::BeatSaberUI::AddHoverHint(AddConfigValueIncrementFloat(textGrid->get_transform(), getPluginConfig().Accel, 1, 0.1, 0.5, 5)->get_gameObject(),"Changes the acceleration speed of scrolling with the joystick. Default: 1.5");
+        //QuestUI::BeatSaberUI::AddHoverHint(AddConfigValueToggle(textGrid->get_transform(), getPluginConfig().IsLinear)->get_gameObject(),"Toggles whether you want to use acceleration or not.");
     }
-     */
+
 }
 
 extern "C" void load() {
   il2cpp_functions::Init();
   QuestUI::Init();
   QuestUI::Register::RegisterModSettingsViewController(modInfo, DidActivate);
-  HitScore::InstallHooks();
+  INSTALL_HOOK(getLogger(), InitFlyingScoreEffect);
   INSTALL_HOOK(getLogger(), FlyingScoreEffectHook);
+  INSTALL_HOOK(getLogger(), HandleSwingFinish);
+  INSTALL_HOOK(getLogger(), FlyingScoreEffectFinish);
   custom_types::Register::AutoRegister();
 }

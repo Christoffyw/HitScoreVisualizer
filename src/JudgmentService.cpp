@@ -1,7 +1,6 @@
 #include "JudgmentService.hpp"
 #include "PluginConfig.hpp"
 #include "main.hpp"
-#include "HsvFlyingScoreEffect.hpp"
 
 #include "UnityEngine/GameObject.hpp"
 #include "UnityEngine/Transform.hpp"
@@ -58,67 +57,129 @@ using namespace QuestUI;
 using namespace UnityEngine;
 
 DEFINE_TYPE(HitScore, JudgmentService);
-DEFINE_TYPE(HitScore, Judgment);
 
-Il2CppString* HitScore::JudgmentService::JudgeText(int score, int before, int after, int accuracy, float timeDependence) {
-    //Temp Judgment setup
-    std::vector< HitScore::Judgment* > judgments;
-    Judgment* judgment1 = new Judgment();
-    judgment1->threshold = 115;
-    judgment1->text = il2cpp_utils::newcsstr("POGGERS");
-    judgment1->color = Color::get_red();
+void HitScore::JudgmentService::ctor() {
+    Judgment judgment0;
+    judgment0.threshold = 110;
+    judgment0.text = "Fantastic";
+    judgment0.color = Color(0,1,0,1);
+    judgment0.fade = false;
 
-    Judgment* judgment2 = new Judgment();
-    judgment2->threshold = 90;
-    judgment2->text = il2cpp_utils::newcsstr("EH");
-    judgment2->color = Color::get_green();
+    Judgment judgment1;
+    judgment1.threshold = 101;
+    judgment1.text = "Excellent";
+    judgment1.color =Color(0.69,1,0,1);
+    judgment1.fade = false;
 
-    Judgment* judgment3 = new Judgment();
-    judgment3->threshold = 50;
-    judgment3->text = il2cpp_utils::newcsstr("BRUH");
-    judgment3->color = Color::get_white();
+    Judgment judgment2;
+    judgment2.threshold = 90;
+    judgment2.text = "Great"; //115 <= 110 -> YES
+    judgment2.color = Color(1, 0.98, 0, 1);
+    judgment2.fade = false;
 
+    Judgment judgment3;
+    judgment3.threshold = 80;
+    judgment3.text = "Good";
+    judgment3.color = Color(1, 0.6, 0, 1);
+    judgment3.fade = true;
+
+    Judgment judgment4;
+    judgment4.threshold = 60;
+    judgment4.text = "Decent";
+    judgment4.color = Color::get_red();
+    judgment4.fade = true;
+
+    Judgment judgment5;
+    judgment5.threshold = 0;
+    judgment5.text = "Way Off";
+    judgment5.color = Color(0.5, 0, 0, 1);
+    judgment5.fade = true;
+
+    judgments.push_back(judgment5);
+    judgments.push_back(judgment4);
     judgments.push_back(judgment3);
     judgments.push_back(judgment2);
     judgments.push_back(judgment1);
+    judgments.push_back(judgment0);
+}
 
 
-    for(auto judgment : judgments) {
-        if(judgment->threshold <= score)  {
-            return judgment->text;
+
+std::string HitScore::JudgmentService::JudgeText(int score, int before, int after, int accuracy, float timeDependence) {
+
+    Judgment chosen;
+
+    for(int i = 0; i < judgments.size(); i++) {
+
+        Judgment judgment = judgments.at(i);
+        int index = i;
+
+        if(judgment.threshold <= score) {
+            chosen = judgment;
         }
     }
-    return il2cpp_utils::newcsstr(std::to_string(score));
+
+    return chosen.text;
 }
 
 Color HitScore::JudgmentService::JudgeColor(int score, int before, int after, int accuracy, float timeDependence) {
-    //Temp Judgment setup
-    std::vector< HitScore::Judgment* > judgments;
-    Judgment* judgment1 = new Judgment();
-    judgment1->threshold = 115;
-    judgment1->text = il2cpp_utils::newcsstr("POGGERS");
-    judgment1->color = Color::get_red();
 
-    Judgment* judgment2 = new Judgment();
-    judgment2->threshold = 90;
-    judgment2->text = il2cpp_utils::newcsstr("EH");
-    judgment2->color = Color::get_green();
+    Judgment chosen;
 
-    Judgment* judgment3 = new Judgment();
-    judgment3->threshold = 50;
-    judgment3->text = il2cpp_utils::newcsstr("BRUH");
-    judgment3->color = Color::get_white();
+    for(int i = 0; i < judgments.size(); i++) {
 
-    judgments.push_back(judgment3);
-    judgments.push_back(judgment2);
-    judgments.push_back(judgment1);
+        Judgment judgment = judgments.at(i);
+        int index = i;
 
-
-    for(auto judgment : judgments) {
-        if(judgment->threshold <= score)  {
-            return judgment->color;
+        if(judgment.threshold <= score) {
+            chosen = judgment;
         }
     }
 
-    return Color::get_white();
+    return chosen.color;
+}
+
+std::string HitScore::JudgmentService::DisplayModeFormat(int score, int before, int after, int accuracy, float timeDependence, Judgment judgment) {
+    auto formatString = judgment.text;
+    std::string buildString;
+    auto nextPercentIndex = formatString.find('%');
+    if(nextPercentIndex == -1)
+        return judgment.text;
+    while(nextPercentIndex != -1) {
+        buildString.append(formatString.substr(0, nextPercentIndex));
+        if(formatString.length() == nextPercentIndex + 1) {
+            formatString += " ";
+        }
+
+        auto specifier = formatString[nextPercentIndex + 1];
+
+        switch (specifier) {
+            case 'b':
+                buildString.append(std::to_string(before));
+                break;
+            case 'c':
+                buildString.append(std::to_string(accuracy));
+                break;
+            case 'a':
+                buildString.append(std::to_string(after));
+                break;
+            case 's':
+                buildString.append(std::to_string(score));
+                break;
+            case '%':
+                buildString.append("%");
+                break;
+            case 'n':
+                buildString.append("\n");
+                break;
+            default:
+                buildString.append(("%" + to_string(specifier)));
+                break;
+        }
+
+        formatString = formatString.erase(0, nextPercentIndex + 2);
+        nextPercentIndex = formatString.find('%');
+    }
+
+    return buildString;
 }
