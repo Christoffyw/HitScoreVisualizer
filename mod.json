@@ -5,7 +5,6 @@
     "id": "hitscore",
     "author": "Christoffyw",
     "version": "1.1.0",
-    "coverImage": "Cover.jpg",
     "packageId": "com.beatgames.beatsaber",
     "packageVersion": "1.16.4",
     "description": "",
@@ -14,6 +13,6 @@
         "libhitscore.so"
     ],
     "libraryFiles": [
-        "libbeatsaber-hook_2_2_4.so"
+        "libbeatsaber-hook_2_2_5.so"
     ]
 }

@@ -62,7 +62,6 @@ using namespace QuestUI;
 using namespace UnityEngine;
 
 DEFINE_TYPE(HitScore, Main);
-DEFINE_TYPE(HitScore, HSVRatingCounter);
 
 static ModInfo modInfo; // Stores the ID and version of our mod, and is sent to the modloader upon startup
 
@@ -83,7 +82,7 @@ extern "C" void setup(ModInfo& info) {
     info.id = ID;
     info.version = VERSION;
     modInfo = info;
-	
+
     getConfig().Load();
     getPluginConfig().Init(info);
     getConfig().Reload();
@@ -95,10 +94,6 @@ extern "C" void setup(ModInfo& info) {
 HitScore::JudgmentService* judgmentService;
 FlyingScoreEffect* currentEffect = nullptr;
 std::map<GlobalNamespace::ISaberSwingRatingCounter*, swingRatingCounter_context> swingRatingMap;
-
-void HitScore::HSVRatingCounter::HandleSaberSwingRatingCounterDidFinish(GlobalNamespace::ISaberSwingRatingCounter* saberSwingRatingCounter) {
-    this->swingRatingCounterFunction(saberSwingRatingCounter);
-}
 
 void JudgeNoContext(FlyingScoreEffect* self, NoteCutInfo& noteCutInfo) {
     int before;
@@ -135,7 +130,7 @@ void Judge(ISaberSwingRatingCounter* counter) {
         context.flyingScoreEffect->text->set_text(il2cpp_utils::newcsstr(judgmentService->JudgeText(total, before, after, accuracy, timeDependence)));
         context.flyingScoreEffect->text->set_color(judgmentService->JudgeColor(total, before, after, accuracy, timeDependence));
         context.flyingScoreEffect->color = judgmentService->JudgeColor(total, before, after, accuracy, timeDependence);
-       swingRatingMap.erase(itr);
+        swingRatingMap.erase(itr);
     }
     //noteCutInfo.swingRatingCounter->UnregisterDidFinishReceiver(reinterpret_cast<GlobalNamespace::ISaberSwingRatingCounterDidFinishReceiver*>(hsvRatingCounter));
 }
@@ -238,12 +233,12 @@ void DidActivate(HMUI::ViewController* self, bool firstActivation, bool addedToH
 }
 
 extern "C" void load() {
-  il2cpp_functions::Init();
-  QuestUI::Init();
-  QuestUI::Register::RegisterModSettingsViewController(modInfo, DidActivate);
-  INSTALL_HOOK(getLogger(), InitFlyingScoreEffect);
-  INSTALL_HOOK(getLogger(), FlyingScoreEffectHook);
-  INSTALL_HOOK(getLogger(), HandleSwingFinish);
-  INSTALL_HOOK(getLogger(), FlyingScoreEffectFinish);
-  custom_types::Register::AutoRegister();
+    il2cpp_functions::Init();
+    custom_types::Register::AutoRegister();
+    QuestUI::Init();
+    QuestUI::Register::RegisterModSettingsViewController(modInfo, DidActivate);
+    INSTALL_HOOK(getLogger(), InitFlyingScoreEffect);
+    INSTALL_HOOK(getLogger(), FlyingScoreEffectHook);
+    INSTALL_HOOK(getLogger(), HandleSwingFinish);
+    INSTALL_HOOK(getLogger(), FlyingScoreEffectFinish);
 }

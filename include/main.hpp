@@ -38,12 +38,12 @@ DECLARE_CLASS_CODEGEN(HitScore, Main, MonoBehaviour,
     DECLARE_INSTANCE_METHOD(void, Update);
 )
 
-DECLARE_CLASS_INTERFACES(HitScore, EffectFinishHandler, "System", "Object", sizeof(Il2CppObject), { classof(GlobalNamespace::ISaberSwingRatingCounterDidFinishReceiver*) },
+/*DECLARE_CLASS_INTERFACES(HitScore, EffectFinishHandler, "System", "Object", sizeof(Il2CppObject), { classof(GlobalNamespace::ISaberSwingRatingCounterDidFinishReceiver*) },
     DECLARE_OVERRIDE_METHOD(void, HandleSaberSwingRatingCounterDidFinish, GET_FIND_METHOD(&GlobalNamespace::ISaberSwingRatingCounterDidFinishReceiver::HandleSaberSwingRatingCounterDidFinish), GlobalNamespace::ISaberSwingRatingCounter* saberSwingRatingCounter);
 
     public:
         std::function<void(GlobalNamespace::ISaberSwingRatingCounter*)> swingRatingCounterFunction;
-)
+)*/
 
 
 Configuration& getConfig();
