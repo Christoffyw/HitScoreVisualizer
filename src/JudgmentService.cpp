@@ -61,37 +61,37 @@ DEFINE_TYPE(HitScore, JudgmentService);
 void HitScore::JudgmentService::ctor() {
     Judgment judgment0;
     judgment0.threshold = 110;
-    judgment0.text = "Fantastic";
+    judgment0.text = "Fantastic%n%s";
     judgment0.color = Color(0,1,0,1);
     judgment0.fade = false;
 
     Judgment judgment1;
     judgment1.threshold = 101;
-    judgment1.text = "Excellent";
-    judgment1.color =Color(0.69,1,0,1);
+    judgment1.text = "<size=80%>Excellent</size>%n%s";
+    judgment1.color = Color(0.69,1,0,1);
     judgment1.fade = false;
 
     Judgment judgment2;
     judgment2.threshold = 90;
-    judgment2.text = "Great"; //115 <= 110 -> YES
+    judgment2.text = "<size=80%>Great</size>%n%s"; //115 <= 110 -> YES
     judgment2.color = Color(1, 0.98, 0, 1);
     judgment2.fade = false;
 
     Judgment judgment3;
     judgment3.threshold = 80;
-    judgment3.text = "Good";
+    judgment3.text = "<size=80%>Good</size>%n%s";
     judgment3.color = Color(1, 0.6, 0, 1);
     judgment3.fade = true;
 
     Judgment judgment4;
     judgment4.threshold = 60;
-    judgment4.text = "Decent";
+    judgment4.text = "<size=80%>Decent</size>%n%s";
     judgment4.color = Color::get_red();
     judgment4.fade = true;
 
     Judgment judgment5;
     judgment5.threshold = 0;
-    judgment5.text = "Way Off";
+    judgment5.text = "<size=80%>Way Off</size>%n%s";
     judgment5.color = Color(0.5, 0, 0, 1);
     judgment5.fade = true;
 
@@ -109,28 +109,20 @@ std::string HitScore::JudgmentService::JudgeText(int score, int before, int afte
 
     Judgment chosen;
 
-    for(int i = 0; i < judgments.size(); i++) {
-
-        Judgment judgment = judgments.at(i);
-        int index = i;
-
+    for(auto& judgment : judgments) {
         if(judgment.threshold <= score) {
             chosen = judgment;
         }
     }
 
-    return chosen.text;
+    return DisplayModeFormat(score, before, after, accuracy, timeDependence, chosen);
 }
 
 Color HitScore::JudgmentService::JudgeColor(int score, int before, int after, int accuracy, float timeDependence) {
 
     Judgment chosen;
 
-    for(int i = 0; i < judgments.size(); i++) {
-
-        Judgment judgment = judgments.at(i);
-        int index = i;
-
+    for(auto& judgment : judgments) {
         if(judgment.threshold <= score) {
             chosen = judgment;
         }
@@ -139,7 +131,7 @@ Color HitScore::JudgmentService::JudgeColor(int score, int before, int after, in
     return chosen.color;
 }
 
-std::string HitScore::JudgmentService::DisplayModeFormat(int score, int before, int after, int accuracy, float timeDependence, Judgment judgment) {
+std::string HitScore::JudgmentService::DisplayModeFormat(int score, int before, int after, int accuracy, float timeDependence, const Judgment& judgment) {
     auto formatString = judgment.text;
     std::string buildString;
     auto nextPercentIndex = formatString.find('%');
@@ -153,7 +145,7 @@ std::string HitScore::JudgmentService::DisplayModeFormat(int score, int before, 
 
         auto specifier = formatString[nextPercentIndex + 1];
 
-        switch (specifier) {
+        switch (tolower(specifier)) {
             case 'b':
                 buildString.append(std::to_string(before));
                 break;
@@ -169,6 +161,9 @@ std::string HitScore::JudgmentService::DisplayModeFormat(int score, int before, 
             case '%':
                 buildString.append("%");
                 break;
+            case '>':
+                buildString.append("%>");
+                break;
             case 'n':
                 buildString.append("\n");
                 break;
@@ -181,5 +176,6 @@ std::string HitScore::JudgmentService::DisplayModeFormat(int score, int before, 
         nextPercentIndex = formatString.find('%');
     }
 
+    getLogger().info("%s", buildString.c_str());
     return buildString;
 }

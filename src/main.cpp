@@ -16,6 +16,7 @@
 #include "UnityEngine/Time.hpp"
 #include "UnityEngine/Mathf.hpp"
 #include "UnityEngine/SpriteRenderer.hpp"
+#include "UnityEngine/AnimationCurve.hpp"
 
 #include "HMUI/CurvedTextMeshPro.hpp"
 #include "HMUI/ViewController.hpp"
@@ -38,6 +39,17 @@
 #include "GlobalNamespace/ScoreModel.hpp"
 #include "GlobalNamespace/FlyingScoreSpawner.hpp"
 #include "GlobalNamespace/BeatmapObjectExecutionRatingsRecorder_CutScoreHandler.hpp"
+#include "GlobalNamespace/ColorExtensions.hpp"
+
+#include "HitScoreFlowCoordinator.hpp"
+
+#include "ViewControllers/ConfigViewController.hpp"
+#include "ViewControllers/Judgment1ViewController.hpp"
+#include "ViewControllers/Judgment2ViewController.hpp"
+#include "ViewControllers/Judgment3ViewController.hpp"
+#include "ViewControllers/Judgment4ViewController.hpp"
+#include "ViewControllers/Judgment5ViewController.hpp"
+#include "ViewControllers/Judgment6ViewController.hpp"
 
 #include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
 #include "beatsaber-hook/shared/utils/byref.hpp"
@@ -60,8 +72,6 @@ using namespace HMUI;
 using namespace GlobalNamespace;
 using namespace QuestUI;
 using namespace UnityEngine;
-
-DEFINE_TYPE(HitScore, Main);
 
 static ModInfo modInfo; // Stores the ID and version of our mod, and is sent to the modloader upon startup
 
@@ -101,9 +111,12 @@ void JudgeNoContext(FlyingScoreEffect* self, NoteCutInfo& noteCutInfo) {
     int accuracy;
     ScoreModel::RawScoreWithoutMultiplier(noteCutInfo.swingRatingCounter, noteCutInfo.cutDistanceToCenter, byref(before), byref(after), byref(accuracy));
     int total = before + after + accuracy;
-    float timeDependence = Mathf::Abs(noteCutInfo.cutNormal.z);
+    float timeDependence = std::abs(noteCutInfo.cutNormal.z);
     self->text->set_text(il2cpp_utils::newcsstr(judgmentService->JudgeText(total, before, after, accuracy, timeDependence)));
     self->text->set_color(judgmentService->JudgeColor(total, before, after, accuracy, timeDependence));
+    self->text->set_richText(true);
+    self->text->set_enableWordWrapping(false);
+    self->text->set_overflowMode(TMPro::TextOverflowModes::Overflow);
     self->color = judgmentService->JudgeColor(total, before, after, accuracy, timeDependence);
     //noteCutInfo.swingRatingCounter->UnregisterDidFinishReceiver(reinterpret_cast<GlobalNamespace::ISaberSwingRatingCounterDidFinishReceiver*>(hsvRatingCounter));
 }
@@ -124,11 +137,14 @@ void Judge(ISaberSwingRatingCounter* counter) {
 
     ScoreModel::RawScoreWithoutMultiplier(context.noteCutInfo.swingRatingCounter, context.noteCutInfo.cutDistanceToCenter, byref(before), byref(after), byref(accuracy));
     int total = before + after + accuracy;
-    float timeDependence = Mathf::Abs(context.noteCutInfo.cutNormal.z);
+    float timeDependence = std::abs(context.noteCutInfo.cutNormal.z);
     if(context.flyingScoreEffect) {
         //context.flyingScoreEffect->maxCutDistanceScoreIndicator->set_enabled(true);
         context.flyingScoreEffect->text->set_text(il2cpp_utils::newcsstr(judgmentService->JudgeText(total, before, after, accuracy, timeDependence)));
         context.flyingScoreEffect->text->set_color(judgmentService->JudgeColor(total, before, after, accuracy, timeDependence));
+        context.flyingScoreEffect->text->set_richText(true);
+        context.flyingScoreEffect->text->set_enableWordWrapping(false);
+        context.flyingScoreEffect->text->set_overflowMode(TMPro::TextOverflowModes::Overflow);
         context.flyingScoreEffect->color = judgmentService->JudgeColor(total, before, after, accuracy, timeDependence);
         swingRatingMap.erase(itr);
     }
@@ -138,24 +154,25 @@ void Judge(ISaberSwingRatingCounter* counter) {
 MAKE_HOOK_MATCH(InitFlyingScoreEffect, &FlyingScoreEffect::InitAndPresent, void, FlyingScoreEffect* self, ByRef<NoteCutInfo> noteCutInfo, int multiplier, float duration, Vector3 targetPos, Quaternion rotation, Color color) {
     if(getPluginConfig().IsEnabled.GetValue()) {
         if(currentEffect) {
-            currentEffect->duration = 0;
+            //currentEffect->duration = 0;
+            getLogger().info("remove effect");
         }
         currentEffect = self;
 
-
+        getLogger().info("new current effect set");
     }
 
     InitFlyingScoreEffect(self, noteCutInfo, multiplier, duration, targetPos, rotation, color);
 
     if(getPluginConfig().IsEnabled.GetValue()) {
-        duration = 0.7;
+        //duration = 0.01;
         self->text->set_text(il2cpp_utils::newcsstr(""));
         self->maxCutDistanceScoreIndicator->set_enabled(false);
 
         //
         //hsvRatingCounter->swingRatingCounterFunction = [=](GlobalNamespace::ISaberSwingRatingCounter* saber) { Judge(self, noteCutInfo.heldRef, hsvRatingCounter); };
 
-        //JudgeNoContext(self, noteCutInfo.heldRef);
+        JudgeNoContext(self, noteCutInfo.heldRef);
 
         auto counter = noteCutInfo.heldRef.swingRatingCounter;
 
@@ -196,31 +213,30 @@ MAKE_HOOK_MATCH(FlyingScoreEffectFinish, &GlobalNamespace::FlyingScoreSpawner::H
     FlyingScoreEffectFinish(self, flyingObjectEffect);
     if(flyingObjectEffect == currentEffect) {
         currentEffect = nullptr;
+        getLogger().info("CLEAR CURRENT EFFECT FOR NEXT ONE");
     }
 }
 
-void HitScore::Main::Update() {
-
+MAKE_HOOK_MATCH(FlyingScoreEffectManualUpdate, &GlobalNamespace::FlyingScoreEffect::ManualUpdate, void, FlyingScoreEffect* self, float t) {
+    FlyingScoreEffectManualUpdate(self, t);
+    Color color = ColorExtensions::ColorWithAlpha(self->color, self->fadeAnimationCurve->Evaluate(t) * self->colorAMultiplier);
+    self->text->set_color(color);
 }
+
 
 int value = 0;
 
 void DidActivate(HMUI::ViewController* self, bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling){
     getLogger().info("DidActivate: %p, %d, %d, %d", self, firstActivation, addedToHierarchy, screenSystemEnabling);
 
-
-
-
-
     if(firstActivation) {
         self->get_gameObject()->AddComponent<HMUI::Touchable*>();
-        self->get_gameObject()->AddComponent<HitScore::Main*>();
         GameObject* container = QuestUI::BeatSaberUI::CreateScrollableSettingsContainer(self->get_transform());
 
         auto* textGrid = container;
         //        textGrid->set_spacing(1);
 
-        QuestUI::BeatSaberUI::CreateText(textGrid->get_transform(), "Hit Score Visualizer settings.");
+        QuestUI::BeatSaberUI::CreateText(textGrid->get_transform(), "HitScoreVisualizer settings.");
         QuestUI::BeatSaberUI::AddHoverHint(AddConfigValueToggle(textGrid->get_transform(), getPluginConfig().IsEnabled)->get_gameObject(),"Toggles whether the mod is active or not.");
 
         //        buttonsGrid->set_spacing(1);
@@ -236,9 +252,11 @@ extern "C" void load() {
     il2cpp_functions::Init();
     custom_types::Register::AutoRegister();
     QuestUI::Init();
-    QuestUI::Register::RegisterModSettingsViewController(modInfo, DidActivate);
+    //QuestUI::Register::RegisterModSettingsViewController(modInfo, DidActivate);
+    QuestUI::Register::RegisterModSettingsFlowCoordinator<HitScore::HitScoreFlowCoordinator*>(modInfo);
     INSTALL_HOOK(getLogger(), InitFlyingScoreEffect);
     INSTALL_HOOK(getLogger(), FlyingScoreEffectHook);
     INSTALL_HOOK(getLogger(), HandleSwingFinish);
     INSTALL_HOOK(getLogger(), FlyingScoreEffectFinish);
+    INSTALL_HOOK(getLogger(), FlyingScoreEffectManualUpdate);
 }
