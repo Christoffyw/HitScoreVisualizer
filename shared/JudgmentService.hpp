@@ -28,7 +28,7 @@ namespace HitScore {
             int threshold;
             std::string text;
             UnityEngine::Color color;
-            bool fade;
+            bool enabled;
     };
 }
 

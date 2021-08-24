@@ -62,14 +62,14 @@ void HitScoreFlowCoordinator::SubMenuButtonWasPressed(int VCtype) {
             this->ReplaceTopViewController(this->HSJudgment1View, this, this, nullptr, HMUI::ViewController::AnimationType::In, HMUI::ViewController::AnimationDirection::Horizontal);
             CurrentActive = VCtype;
             break;
-        case 2:
+        case 3:
             if (!this->HSJudgment2View) this->HSJudgment2View = QuestUI::BeatSaberUI::CreateViewController<Judgment2ViewController*>();
             if (!this->HSJudgment2View) break;
             this->SetTitle(il2cpp_utils::createcsstr("HitScoreVisualizer Judgment 2"), HMUI::ViewController::AnimationType::In);
             this->ReplaceTopViewController(this->HSJudgment2View, this, this, nullptr, HMUI::ViewController::AnimationType::In, HMUI::ViewController::AnimationDirection::Horizontal);
             CurrentActive = VCtype;
             break;
-        case 3:
+        case 2:
             if (!this->HSJudgment3View) this->HSJudgment3View = QuestUI::BeatSaberUI::CreateViewController<Judgment3ViewController*>();
             if (!this->HSJudgment3View || this->providedMainViewController == this->HSJudgment3View) break;
             this->SetTitle(il2cpp_utils::createcsstr("HitScoreVisualizer Judgment 3"), HMUI::ViewController::AnimationType::In);

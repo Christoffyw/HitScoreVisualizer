@@ -3,8 +3,8 @@ if (-not ($PSVersionTable.PSEdition -eq "Core")) {
     $buildScript += ".cmd"
 }
 
-$ArchiveName = "HitScore_v1.1.0.qmod"
-$TempArchiveName = "HitScore_v1.1.0.qmod.zip"
+$ArchiveName = "HitScoreVisualizer_v1.5.0.qmod"
+$TempArchiveName = "HitScoreVisualizer_v1.5.0.qmod.zip"
 
 & $buildScript NDK_PROJECT_PATH=$PSScriptRoot APP_BUILD_SCRIPT=$PSScriptRoot/Android.mk NDK_APPLICATION_MK=$PSScriptRoot/Application.mk
 Compress-Archive -Path "./libs/arm64-v8a/libhitscore.so", "./libs/arm64-v8a/libbeatsaber-hook_2_2_5.so", "./mod.json" -DestinationPath $TempArchiveName -Force

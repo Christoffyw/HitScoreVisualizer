@@ -60,40 +60,40 @@ DEFINE_TYPE(HitScore, JudgmentService);
 
 void HitScore::JudgmentService::ctor() {
     Judgment judgment0;
-    judgment0.threshold = 110;
-    judgment0.text = "Fantastic%n%s";
-    judgment0.color = Color(0,1,0,1);
-    judgment0.fade = false;
+    judgment0.threshold = getPluginConfig().J1Threshold.GetValue();
+    judgment0.text = getPluginConfig().J1Text.GetValue();
+    judgment0.color = getPluginConfig().J1Color.GetValue();
+    judgment0.enabled = getPluginConfig().J1Enabled.GetValue();
 
     Judgment judgment1;
-    judgment1.threshold = 101;
-    judgment1.text = "<size=80%>Excellent</size>%n%s";
-    judgment1.color = Color(0.69,1,0,1);
-    judgment1.fade = false;
+    judgment1.threshold = getPluginConfig().J2Threshold.GetValue();
+    judgment1.text = getPluginConfig().J2Text.GetValue();
+    judgment1.color = getPluginConfig().J2Color.GetValue();
+    judgment1.enabled = getPluginConfig().J2Enabled.GetValue();
 
     Judgment judgment2;
-    judgment2.threshold = 90;
-    judgment2.text = "<size=80%>Great</size>%n%s"; //115 <= 110 -> YES
-    judgment2.color = Color(1, 0.98, 0, 1);
-    judgment2.fade = false;
+    judgment2.threshold = getPluginConfig().J3Threshold.GetValue();
+    judgment2.text = getPluginConfig().J3Text.GetValue();
+    judgment2.color = getPluginConfig().J3Color.GetValue();
+    judgment2.enabled = getPluginConfig().J3Enabled.GetValue();
 
     Judgment judgment3;
-    judgment3.threshold = 80;
-    judgment3.text = "<size=80%>Good</size>%n%s";
-    judgment3.color = Color(1, 0.6, 0, 1);
-    judgment3.fade = true;
+    judgment3.threshold = getPluginConfig().J4Threshold.GetValue();
+    judgment3.text = getPluginConfig().J4Text.GetValue();
+    judgment3.color = getPluginConfig().J4Color.GetValue();
+    judgment3.enabled = getPluginConfig().J4Enabled.GetValue();
 
     Judgment judgment4;
-    judgment4.threshold = 60;
-    judgment4.text = "<size=80%>Decent</size>%n%s";
-    judgment4.color = Color::get_red();
-    judgment4.fade = true;
+    judgment4.threshold = getPluginConfig().J5Threshold.GetValue();
+    judgment4.text = getPluginConfig().J5Text.GetValue();
+    judgment4.color = getPluginConfig().J5Color.GetValue();
+    judgment4.enabled = getPluginConfig().J5Enabled.GetValue();
 
     Judgment judgment5;
-    judgment5.threshold = 0;
-    judgment5.text = "<size=80%>Way Off</size>%n%s";
-    judgment5.color = Color(0.5, 0, 0, 1);
-    judgment5.fade = true;
+    judgment5.threshold = getPluginConfig().J6Threshold.GetValue();
+    judgment5.text = getPluginConfig().J6Text.GetValue();
+    judgment5.color = getPluginConfig().J6Color.GetValue();
+    judgment5.enabled = getPluginConfig().J6Enabled.GetValue();
 
     judgments.push_back(judgment5);
     judgments.push_back(judgment4);
@@ -110,6 +110,8 @@ std::string HitScore::JudgmentService::JudgeText(int score, int before, int afte
     Judgment chosen;
 
     for(auto& judgment : judgments) {
+        if(!judgment.enabled)
+            continue;
         if(judgment.threshold <= score) {
             chosen = judgment;
         }
@@ -123,6 +125,8 @@ Color HitScore::JudgmentService::JudgeColor(int score, int before, int after, in
     Judgment chosen;
 
     for(auto& judgment : judgments) {
+        if(!judgment.enabled)
+            continue;
         if(judgment.threshold <= score) {
             chosen = judgment;
         }
