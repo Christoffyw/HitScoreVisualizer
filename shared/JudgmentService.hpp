@@ -35,6 +35,7 @@ namespace HitScore {
 DECLARE_CLASS_CODEGEN(HitScore, JudgmentService, UnityEngine::MonoBehaviour,
     public:
         std::string DisplayModeFormat(int score, int before, int after, int accuracy, float timeDependence, const Judgment& judgment);
+        std::string ConvertTimeDependencePrecision(float timeDependence, int decimalOffset, int decimalPrecision);
         std::string JudgeText(int score, int before, int after, int accuracy, float timeDependence);
         UnityEngine::Color JudgeColor(int score, int before, int after, int accuracy, float timeDependence);
         inline static std::vector< HitScore::Judgment > judgments;

@@ -9,16 +9,17 @@
 
 //#include "beatsaber-hook/shared/config/config-utils.hpp"
 #include "config-utils/shared/config-utils.hpp"
+#include "JudgmentService.hpp"
 
 DECLARE_CONFIG(PluginConfig,
 
 //General Mod Config
-CONFIG_VALUE(IsEnabled, bool, "Mod Enabled", true);
+CONFIG_VALUE(IsEnabled, bool, "Mod Enabled", true);;
 
 //Judgment 1
 CONFIG_VALUE(J1Threshold, int, "Judgment 1 Threshold", 110);
 CONFIG_VALUE(J1Enabled, bool, "Judgment 1 Enabled", true);
-CONFIG_VALUE(J1Text, std::string, "Judgment 2 Text", "Fantastic%n%s");
+CONFIG_VALUE(J1Text, std::string, "Judgment 1 Text", "Fantastic%n%s");
 CONFIG_VALUE(J1Color, UnityEngine::Color, "Judgment 1 Color", UnityEngine::Color(0,1,0,1));
 
 //Judgment 2
@@ -53,6 +54,7 @@ CONFIG_VALUE(J6Color, UnityEngine::Color, "Judgment 6 Color", UnityEngine::Color
 
 
     CONFIG_INIT_FUNCTION(
+
             //General Mod Config
             CONFIG_INIT_VALUE(IsEnabled);
 

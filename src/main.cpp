@@ -93,11 +93,7 @@ extern "C" void setup(ModInfo& info) {
     info.version = VERSION;
     modInfo = info;
 
-    getConfig().Load();
     getPluginConfig().Init(info);
-    getConfig().Reload();
-    getConfig().Write();
-
     getLogger().info("Completed setup!");
 }
 

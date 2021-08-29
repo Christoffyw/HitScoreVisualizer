@@ -162,6 +162,9 @@ std::string HitScore::JudgmentService::DisplayModeFormat(int score, int before, 
             case 's':
                 buildString.append(std::to_string(score));
                 break;
+            case 'p':
+                buildString.append(string_format("%f", std::round(score / 115 * 100)));
+                break;
             case '%':
                 buildString.append("%");
                 break;

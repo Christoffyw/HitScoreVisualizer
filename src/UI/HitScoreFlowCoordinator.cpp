@@ -104,7 +104,6 @@ void HitScoreFlowCoordinator::SubMenuButtonWasPressed(int VCtype) {
 }
 
 void HitScoreFlowCoordinator::BackButtonWasPressed(HMUI::ViewController* topViewController) {
-    getConfig().Write();
 
     HMUI::FlowCoordinator* ModSettingsFC = QuestUI::GetModSettingsFlowCoordinator();
     ModSettingsFC->DismissFlowCoordinator(this, HMUI::ViewController::AnimationDirection::Horizontal, nullptr, false);
