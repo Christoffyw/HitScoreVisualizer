@@ -4,7 +4,11 @@
     "name": "Hit Score Visualizer",
     "id": "hitscore",
     "author": "Christoffyw",
+<<<<<<< Updated upstream
     "version": "1.1.0",
+=======
+    "version": "2.0.0",
+>>>>>>> Stashed changes
     "coverImage": "Cover.jpg",
     "packageId": "com.beatgames.beatsaber",
     "packageVersion": "1.16.4",

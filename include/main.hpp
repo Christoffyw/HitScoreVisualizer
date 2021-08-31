@@ -19,7 +19,13 @@
 #include "GlobalNamespace/NoteCutInfo.hpp"
 #include "GlobalNamespace/ISaberSwingRatingCounter.hpp"
 
+<<<<<<< Updated upstream
 #include "hooks.hpp"
+=======
+#include "PluginConfig.hpp"
+
+#include <map>
+>>>>>>> Stashed changes
 
 // Define these functions here so that we can easily read configuration and log information from other files
 
@@ -30,6 +36,23 @@ DECLARE_CLASS_CODEGEN(HitScore, Main, MonoBehaviour,
     DECLARE_INSTANCE_METHOD(void, Update);
 )
 
+class HSV {
+    public:
+        static HSVConfig config;
+        static bool configValid;
+        static void loadConfig();
+        static std::optional<int> getBestJudgment(std::vector<Judgment>& judgments, int comparison);
+        static std::optional<const Segment> getBestSegment(std::vector<Segment>& segments, int comparison);
+        static std::optional<const TimeSegment> getBestTimeSegment(std::vector<TimeSegment>& segments, int comparison);
+        static void checkJudgments(GlobalNamespace::FlyingScoreEffect* flyingScoreEffect, int total, int before, int after, int accuracy, float timeDependence);
+        static std::string DisplayModeFormat(int score, int before, int after, int accuracy, float timeDependence, const Judgment& judgment);
+        static std::string ConvertTimeDependencePrecision(float timeDependence, int decimalOffset, int decimalPrecision);
+        static std::string JudgeTimeSegment(int scoreForSegment, std::vector<TimeSegment> judgments);
+        static std::string JudgeSegment(int scoreForSegment, std::vector<Segment> judgments);
+        static std::string JudgeText(int score, int before, int after, int accuracy, float timeDependence, int bestIndex);
+        static UnityEngine::Color JudgeColor(int score, int before, int after, int accuracy, float timeDependence, int bestIndex);
+};
 
 Configuration& getConfig();
 Logger& getLogger();
+const ModInfo& getModInfo();
