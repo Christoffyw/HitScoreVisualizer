@@ -2,9 +2,6 @@
 
 #include <string>
 #include <unordered_map>
-
-<<<<<<< Updated upstream
-=======
 #include "modloader/shared/modloader.hpp"
 // beatsaber-hook is a modding framework that lets us call functions and fetch field values from in the game
 // It also allows creating objects, configuration, and importantly, hooking methods to modify their values
@@ -18,7 +15,6 @@
 #include "custom-types/shared/macros.hpp"
 #include "custom-types/shared/types.hpp"
 #include "custom-types/shared/register.hpp"
->>>>>>> Stashed changes
 #include <string>
 #include <iostream>
 
@@ -26,8 +22,6 @@
 #include "beatsaber-hook/shared/config/config-utils.hpp"
 #include "beatsaber-hook/shared/utils/typedefs.h"
 #include "config-utils/shared/config-utils.hpp"
-<<<<<<< Updated upstream
-=======
 #include "UnityEngine/Color.hpp"
 
 typedef enum ConfigType {
@@ -131,25 +125,3 @@ public:
     static void CreateJSONTimeSegments(rapidjson::MemoryPoolAllocator<>& allocator, ConfigDocument& config, std::vector<TimeSegment>& vector, std::string_view name);
     static void AddJSONJudgment(rapidjson::MemoryPoolAllocator<>& allocator, rapidjson::Document::ValueType& arr, Judgment& j);
 };
->>>>>>> Stashed changes
-
-DECLARE_CONFIG(PluginConfig,
-        CONFIG_VALUE(IsEnabled, bool, "Mod Enabled", true);
-
-<<<<<<< Updated upstream
-CONFIG_VALUE(IsEnabled, bool, "Mod Enabled", true);
-CONFIG_VALUE(MaxSpeed, float, "Max Scroll Speed", 600);
-CONFIG_VALUE(Accel, float, "Scroll Acceleration", 1.5);
-CONFIG_VALUE(IsLinear, bool, "Scrolling is Linear", true);
-    CONFIG_INIT_FUNCTION(
-            CONFIG_INIT_VALUE(MaxSpeed);
-            CONFIG_INIT_VALUE(Accel);
-            CONFIG_INIT_VALUE(IsLinear);
-            CONFIG_INIT_VALUE(IsEnabled);
-    )
-=======
-        CONFIG_INIT_FUNCTION(
-            CONFIG_INIT_VALUE(IsEnabled);
-        )
->>>>>>> Stashed changes
-)

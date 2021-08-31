@@ -246,6 +246,7 @@ bool ConfigHelper::LoadConfig(HSVConfig& con, ConfigDocument& config) {
         return true;
     }
     static auto logger = getLogger().WithContext("ConfigHelper").WithContext("LoadConfig");
+    logger.debug("got passed object check");
     // Default to true.
     // This allows us to forcibly regenerate the config if it doesn't load properly and doesn't have this property.
     con.isDefaultConfig = getBool(config, "isDefaultConfig").value_or(true);
@@ -333,5 +334,3 @@ void HSVConfig::SetToDefault() {
     type = CONFIG_TYPE_STANDARD;
     isDefaultConfig = true;
 }
-
-DEFINE_CONFIG(PluginConfig);

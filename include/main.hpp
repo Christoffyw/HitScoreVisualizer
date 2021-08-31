@@ -18,23 +18,20 @@
 #include "GlobalNamespace/FlyingScoreEffect.hpp"
 #include "GlobalNamespace/NoteCutInfo.hpp"
 #include "GlobalNamespace/ISaberSwingRatingCounter.hpp"
-
-<<<<<<< Updated upstream
 #include "hooks.hpp"
-=======
 #include "PluginConfig.hpp"
 
 #include <map>
->>>>>>> Stashed changes
 
 // Define these functions here so that we can easily read configuration and log information from other files
 
 
 using namespace UnityEngine;
 
-DECLARE_CLASS_CODEGEN(HitScore, Main, MonoBehaviour,
-    DECLARE_INSTANCE_METHOD(void, Update);
-)
+struct swingRatingCounter_context {
+    GlobalNamespace::NoteCutInfo noteCutInfo;
+    GlobalNamespace::FlyingScoreEffect* flyingScoreEffect;
+};
 
 class HSV {
     public:
