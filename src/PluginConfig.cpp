@@ -245,30 +245,41 @@ bool ConfigHelper::LoadConfig(HSVConfig& con, ConfigDocument& config) {
         con.SetToDefault();
         return true;
     }
+
+    HSVConfig newCon;
+
     static auto logger = getLogger().WithContext("ConfigHelper").WithContext("LoadConfig");
     logger.debug("got passed object check");
+
+    std::vector<Judgment> judgments;
+    getJudgments(judgments, config);
+
+    for (std::vector<Judgment>::const_iterator i = judgments.begin(); i != judgments.end(); ++i)
+        logger.info("%s", i->text->c_str());
     // Default to true.
     // This allows us to forcibly regenerate the config if it doesn't load properly and doesn't have this property.
-    con.isDefaultConfig = getBool(config, "isDefaultConfig").value_or(true);
+    newCon.isDefaultConfig = getBool(config, "isDefaultConfig").value_or(true);
 
-    getJudgments(con.judgments, config);
-    getSegments(con.beforeCutAngleJudgments, config, "beforeCutAngleJudgments");
-    getSegments(con.accuracyJudgments, config, "accuracyJudgments");
-    getSegments(con.afterCutAngleJudgments, config, "afterCutAngleJudgments");
-    getTimeSegments(con.timeDependencyJudgments, config, "timeDependencyJudgments");
+    getJudgments(newCon.judgments, config);
+    getSegments(newCon.beforeCutAngleJudgments, config, "beforeCutAngleJudgments");
+    getSegments(newCon.accuracyJudgments, config, "accuracyJudgments");
+    getSegments(newCon.afterCutAngleJudgments, config, "afterCutAngleJudgments");
+    getTimeSegments(newCon.timeDependencyJudgments, config, "timeDependencyJudgments");
 
     // Default to standard type
-    con.type = (ConfigType_t)getInt(config, "type").value_or(CONFIG_TYPE_STANDARD);
+    newCon.type = (ConfigType_t)getInt(config, "type").value_or(CONFIG_TYPE_STANDARD);
 
     // Default to false
-    con.useFixedPos = getBool(config, "useFixedPos").value_or(false);
+    newCon.useFixedPos = getBool(config, "useFixedPos").value_or(false);
     // Default to 0
-    con.fixedPosX = getFloat(config, "fixedPosX").value_or(0);
-    con.fixedPosY = getFloat(config, "fixedPosY").value_or(0);
-    con.fixedPosZ = getFloat(config, "fixedPosZ").value_or(0);
+    newCon.fixedPosX = getFloat(config, "fixedPosX").value_or(0);
+    newCon.fixedPosY = getFloat(config, "fixedPosY").value_or(0);
+    newCon.fixedPosZ = getFloat(config, "fixedPosZ").value_or(0);
 
-    con.timeDependencyDecimalPrecision = getInt(config, "timeDependencyDecimalPrecision").value_or(1);
-    con.timeDependencyDecimalOffset = getInt(config, "timeDependencyDecimalOffset").value_or(2);
+    newCon.timeDependencyDecimalPrecision = getInt(config, "timeDependencyDecimalPrecision").value_or(1);
+    newCon.timeDependencyDecimalOffset = getInt(config, "timeDependencyDecimalOffset").value_or(2);
+
+    con = newCon;
     return true;
 }
 
@@ -334,3 +345,5 @@ void HSVConfig::SetToDefault() {
     type = CONFIG_TYPE_STANDARD;
     isDefaultConfig = true;
 }
+
+DEFINE_CONFIG(PluginConfig);

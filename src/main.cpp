@@ -49,12 +49,17 @@
 #include "custom-types/shared/register.hpp"
 #include "questui/shared/QuestUI.hpp"
 #include "questui/shared/BeatSaberUI.hpp"
+#include "questui/shared/CustomTypes/Components/ExternalComponents.hpp"
 #include "Zenject/DiContainer.hpp"
 #include <iostream>
 #include <string>
 #include <utility>
 #include <iomanip>
 #include <sstream>
+#include <regex>
+#include <filesystem>
+
+namespace fs = std::filesystem;
 
 using namespace std;
 using namespace HMUI;
@@ -64,6 +69,7 @@ using namespace UnityEngine;
 
 HSVConfig HSV::config;
 bool HSV::configValid = false;
+std::string currentConfig;
 
 static ModInfo modInfo; // Stores the ID and version of our mod, and is sent to the modloader upon startup
 
@@ -92,11 +98,24 @@ Logger& getLogger() {
     return *logger;
 }
 
+void makeFolder() {
+    if (!direxists(getDataDir(modInfo)))
+    {
+        int makePath = mkpath(getDataDir(modInfo));
+        if (makePath == -1)
+        {
+            getLogger().error("Failed to make configs folder path!");
+        }
+    }
+}
+
 // Called at the early stages of game loading
 extern "C" void setup(ModInfo& info) {
     info.id = ID;
     info.version = VERSION;
     modInfo = info;
+
+    getPluginConfig().Init(info);
 
     getLogger().info("Completed setup!");
 }
@@ -141,7 +160,7 @@ void Judge(ISaberSwingRatingCounter* counter) {
 }
 
 MAKE_HOOK_MATCH(InitFlyingScoreEffect, &FlyingScoreEffect::InitAndPresent, void, FlyingScoreEffect* self, ByRef<NoteCutInfo> noteCutInfo, int multiplier, float duration, Vector3 targetPos, Quaternion rotation, Color color) {
-    if(true) {
+    if(getPluginConfig().IsEnabled.GetValue()) {
         if(HSV::config.useFixedPos) {
 
             targetPos.x = HSV::config.fixedPosX;
@@ -164,7 +183,7 @@ MAKE_HOOK_MATCH(InitFlyingScoreEffect, &FlyingScoreEffect::InitAndPresent, void,
 
     InitFlyingScoreEffect(self, noteCutInfo, multiplier, duration, targetPos, rotation, color);
 
-    if(true) {
+    if(getPluginConfig().IsEnabled.GetValue()) {
         //duration = 0.01;
         self->text->set_text(il2cpp_utils::newcsstr(""));
         self->maxCutDistanceScoreIndicator->set_enabled(false);
@@ -206,38 +225,29 @@ MAKE_HOOK_MATCH(FlyingScoreEffectManualUpdate, &GlobalNamespace::FlyingScoreEffe
     self->text->set_color(color);
 }
 
-void DidActivate(HMUI::ViewController* self, bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling){
-    getLogger().info("DidActivate: %p, %d, %d, %d", self, firstActivation, addedToHierarchy, screenSystemEnabling);
-
-    if(firstActivation) {
-        self->get_gameObject()->AddComponent<HMUI::Touchable*>();
-        GameObject* container = QuestUI::BeatSaberUI::CreateScrollableSettingsContainer(self->get_transform());
-
-        auto* textGrid = container;
-        //        textGrid->set_spacing(1);
-
-        QuestUI::BeatSaberUI::CreateText(textGrid->get_transform(), "HitScoreVisualizer settings.");
-        //QuestUI::BeatSaberUI::AddHoverHint(AddConfigValueToggle(textGrid->get_transform(), getPluginConfig().IsEnabled)->get_gameObject(),"Toggles whether the mod is active or not.");
-
-        //        buttonsGrid->set_spacing(1);
-
-        //QuestUI::BeatSaberUI::AddHoverHint(AddConfigValueIncrementFloat(textGrid->get_transform(), getPluginConfig().MaxSpeed, 0, 10, 30, 1000)->get_gameObject(),"Changes the speed of scrolling with the joystick. Default: 600");
-        //QuestUI::BeatSaberUI::AddHoverHint(AddConfigValueIncrementFloat(textGrid->get_transform(), getPluginConfig().Accel, 1, 0.1, 0.5, 5)->get_gameObject(),"Changes the acceleration speed of scrolling with the joystick. Default: 1.5");
-        //QuestUI::BeatSaberUI::AddHoverHint(AddConfigValueToggle(textGrid->get_transform(), getPluginConfig().IsLinear)->get_gameObject(),"Toggles whether you want to use acceleration or not.");
-    }
-
-}
-
 void HSV::loadConfig() {
     static auto logger = getLogger().WithContext("HSV").WithContext("loadConfig");
     logger.info("Loading Configuration...");
-    getConfig().Load();
-    HANDLE_CONFIG_FAILURE(logger, ConfigHelper::LoadConfig(config, getConfig().config));
+
+    getConfig().Reload();
+
+    auto json = readfile(getDataDir(modInfo) + currentConfig);
+    ConfigDocument doc;
+    doc.Parse(json.c_str());
+
+    logger.info("%s",currentConfig.c_str());
+
+    HANDLE_CONFIG_FAILURE(logger, ConfigHelper::LoadConfig(config, doc));
     if (!configValid && config.isDefaultConfig) {
         logger.debug("Setting to default because config failed to load, even though it was default config!");
         config.SetToDefault();
-        config.WriteToConfig(getConfig().config);
-        getConfig().Write();
+        config.WriteToConfig(doc);
+
+        rapidjson::StringBuffer buffer;
+        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+        doc.Accept(writer);
+        writefile(getDataDir(modInfo) + currentConfig, buffer.GetString());
+
         configValid = true;
     }
     if (configValid) {
@@ -245,6 +255,86 @@ void HSV::loadConfig() {
     } else {
         logger.info("Configuration is invalid! Please ensure the config is the correct format!");
     }
+}
+
+GameObject* scrollView;
+std::list<UnityEngine::UI::Button*> configList = {};
+TMPro::TextMeshProUGUI* displaySelectedText;
+
+void SelectButtonConfig() {
+    for (UnityEngine::UI::Button* button : configList)
+    {
+        if (button->hasSelection)
+        {
+            std::string filename = to_utf8(csstrtostr(button->GetComponentInChildren<TMPro::TextMeshProUGUI*>()->get_text()));
+            getPluginConfig().SelectedConfig.SetValue(filename);
+            currentConfig = filename;
+            HSV::loadConfig();
+            getLogger().debug("Selected filename %s", filename.c_str());
+            getLogger().info("%s", HSV::config.judgments[0].text.value().c_str());
+            displaySelectedText->set_text(il2cpp_utils::newcsstr("Current Config: " + getPluginConfig().SelectedConfig.GetValue()));
+        }
+    }
+}
+
+void RefreshConfigList()
+{
+    for (UnityEngine::UI::Button* button : configList) UnityEngine::Object::Destroy(button->get_transform()->get_parent()->get_gameObject());
+    configList = {};
+
+    for(const auto & entry : fs::directory_iterator(getDataDir(modInfo).c_str())) {
+        std::string filename = entry.path().string();
+        while (filename.find(getDataDir(modInfo).c_str()) != string::npos)
+            filename.replace(filename.find(getDataDir(modInfo).c_str()), 64, "");
+        if (std::regex_search(filename, std::regex(".json")))
+        {
+            UnityEngine::UI::HorizontalLayoutGroup* rowgroup = QuestUI::BeatSaberUI::CreateHorizontalLayoutGroup(scrollView->get_transform());
+            UnityEngine::UI::Button* button = QuestUI::BeatSaberUI::CreateUIButton(rowgroup->get_rectTransform(), filename, SelectButtonConfig);
+            button->get_gameObject()->GetComponentInChildren<TMPro::TextMeshProUGUI*>()->set_fontStyle(2);
+            configList.push_back(button);
+        }
+    }
+}
+
+void DidActivate(HMUI::ViewController* self, bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling){
+    getLogger().info("DidActivate: %p, %d, %d, %d", self, firstActivation, addedToHierarchy, screenSystemEnabling);
+
+    if(firstActivation) {
+        self->get_gameObject()->AddComponent<HMUI::Touchable*>();
+        UnityEngine::UI::VerticalLayoutGroup* container = QuestUI::BeatSaberUI::CreateVerticalLayoutGroup(self->get_transform());
+
+        auto textGrid = QuestUI::BeatSaberUI::CreateVerticalLayoutGroup(container->get_rectTransform());
+        textGrid->set_childAlignment(UnityEngine::TextAnchor::UpperCenter);
+        textGrid->set_childForceExpandHeight(false);
+        textGrid->set_childControlHeight(true);
+        //        textGrid->set_spacing(1);
+
+        QuestUI::BeatSaberUI::CreateText(textGrid->get_rectTransform(), "HitScoreVisualizer settings.");
+        QuestUI::BeatSaberUI::AddHoverHint(AddConfigValueToggle(textGrid->get_rectTransform(), getPluginConfig().IsEnabled)->get_gameObject(),"Toggles whether the mod is active or not.");
+
+        QuestUI::BeatSaberUI::CreateText(textGrid->get_rectTransform(), "<br><br>");
+        displaySelectedText = QuestUI::BeatSaberUI::CreateText(textGrid->get_rectTransform(), "Current Config: " + getPluginConfig().SelectedConfig.GetValue());
+
+        auto configListScroll = QuestUI::BeatSaberUI::CreateScrollView(container->get_rectTransform());
+        configListScroll->GetComponent<QuestUI::ExternalComponents*>()->Get<UnityEngine::UI::LayoutElement*>()->set_minHeight(56.0);
+
+        scrollView = configListScroll;
+
+        auto configListContainer = QuestUI::BeatSaberUI::CreateVerticalLayoutGroup(configListScroll->get_transform());
+        configListContainer->set_childAlignment(UnityEngine::TextAnchor::UpperCenter);
+        configListContainer->set_childForceExpandHeight(false);
+        configListContainer->set_childControlHeight(true);
+
+        configListScroll->get_gameObject()->SetActive(getPluginConfig().IsEnabled.GetValue());
+
+        RefreshConfigList();
+        //        buttonsGrid->set_spacing(1);
+
+        //QuestUI::BeatSaberUI::AddHoverHint(AddConfigValueIncrementFloat(textGrid->get_transform(), getPluginConfig().MaxSpeed, 0, 10, 30, 1000)->get_gameObject(),"Changes the speed of scrolling with the joystick. Default: 600");
+        //QuestUI::BeatSaberUI::AddHoverHint(AddConfigValueIncrementFloat(textGrid->get_transform(), getPluginConfig().Accel, 1, 0.1, 0.5, 5)->get_gameObject(),"Changes the acceleration speed of scrolling with the joystick. Default: 1.5");
+        //QuestUI::BeatSaberUI::AddHoverHint(AddConfigValueToggle(textGrid->get_transform(), getPluginConfig().IsLinear)->get_gameObject(),"Toggles whether you want to use acceleration or not.");
+    }
+
 }
 
 std::optional<int> HSV::getBestJudgment(std::vector<Judgment> &judgments, int comparison) {
@@ -425,6 +515,10 @@ std::string HSV::DisplayModeFormat(int score, int before, int after, int accurac
 extern "C" void load() {
     custom_types::Register::AutoRegister();
     il2cpp_functions::Init();
+    currentConfig = getPluginConfig().SelectedConfig.GetValue();
+    makeFolder();
+    QuestUI::Register::RegisterModSettingsViewController(modInfo, DidActivate);
+    QuestUI::Register::RegisterMainMenuModSettingsViewController(modInfo, DidActivate);
     HSV::loadConfig();
     INSTALL_HOOK(getLogger(), InitFlyingScoreEffect);
     INSTALL_HOOK(getLogger(), HandleSwingFinish);

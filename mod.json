@@ -3,22 +3,23 @@
     "name": "Hit Score Visualizer",
     "id": "hitscore",
     "author": "Christoffyw",
-    "version": "2.0.0",
+    "version": "2.1.0",
     "coverImage": "Cover.jpg",
     "packageId": "com.beatgames.beatsaber",
-    "packageVersion": "1.16.4",
-    "description": "",
+    "packageVersion": "1.17.0",
+    "description": "Changes the scores that pop up when you hit notes.",
     "type": "Gameplay",
     "modFiles": [
         "libhitscore.so"
     ],
     "libraryFiles": [
-        "libbeatsaber-hook_2_2_4.so"
+        "libbeatsaber-hook_2_3_0.so",
+        "libquestui.so"
     ],
     "fileCopies": [
         {
-            "name": "hitscorevisualizer.json",
-            "destination": "/sdcard/ModData/com.beatgames.beatsaber/Configs/hitscorevisualizer.json"
+            "name": "HitScoreVisualizerConfig (default).json",
+            "destination": "/sdcard/ModData/com.beatgames.beatsaber/Mods/HitScoreVisualizer/HitScoreVisualizerConfig (default).json"
         }
     ]
 }

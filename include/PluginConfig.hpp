@@ -125,3 +125,13 @@ public:
     static void CreateJSONTimeSegments(rapidjson::MemoryPoolAllocator<>& allocator, ConfigDocument& config, std::vector<TimeSegment>& vector, std::string_view name);
     static void AddJSONJudgment(rapidjson::MemoryPoolAllocator<>& allocator, rapidjson::Document::ValueType& arr, Judgment& j);
 };
+
+DECLARE_CONFIG(PluginConfig,
+    CONFIG_VALUE(IsEnabled, bool, "Mod Enabled", true);
+    CONFIG_VALUE(SelectedConfig, std::string, "Seleted Config File", "HitScoreVisualizerConfig (default).json");
+
+    CONFIG_INIT_FUNCTION(
+            CONFIG_INIT_VALUE(IsEnabled);
+            CONFIG_INIT_VALUE(SelectedConfig);
+    )
+)
