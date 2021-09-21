@@ -28,11 +28,6 @@
 
 using namespace UnityEngine;
 
-struct swingRatingCounter_context {
-    GlobalNamespace::NoteCutInfo noteCutInfo;
-    GlobalNamespace::FlyingScoreEffect* flyingScoreEffect;
-};
-
 class HSV {
     public:
         static HSVConfig config;

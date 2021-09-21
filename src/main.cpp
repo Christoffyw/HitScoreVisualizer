@@ -120,43 +120,29 @@ extern "C" void setup(ModInfo& info) {
     getLogger().info("Completed setup!");
 }
 
+// used for fixed pos
 FlyingScoreEffect* currentEffect = nullptr;
-std::map<GlobalNamespace::ISaberSwingRatingCounter*, swingRatingCounter_context> swingRatingMap;
+std::map<GlobalNamespace::ISaberSwingRatingCounter*, GlobalNamespace::NoteCutInfo> swingRatingMap;
 
-void JudgeNoContext(FlyingScoreEffect* self, NoteCutInfo& noteCutInfo) {
-    int before;
-    int after;
-    int accuracy;
-    ScoreModel::RawScoreWithoutMultiplier(noteCutInfo.swingRatingCounter, noteCutInfo.cutDistanceToCenter, byref(before), byref(after), byref(accuracy));
-    int total = before + after + accuracy;
-    float timeDependence = std::abs(noteCutInfo.cutNormal.z);
-    HSV::checkJudgments(self, total, before, after, accuracy, timeDependence);
-    //noteCutInfo.swingRatingCounter->UnregisterDidFinishReceiver(reinterpret_cast<GlobalNamespace::ISaberSwingRatingCounterDidFinishReceiver*>(hsvRatingCounter));
-}
-
-void Judge(ISaberSwingRatingCounter* counter) {
+void Judge(FlyingScoreEffect* self, ISaberSwingRatingCounter* counter, bool isFinish) {
 
     auto itr = swingRatingMap.find(counter);
     if(itr == swingRatingMap.end()) {
         getLogger().info("counter was not found in swingRatingMap!");
         return;
     }
-    auto context = itr->second;
+    auto noteCutInfo = itr->second;
 
     int before;
     int after;
     int accuracy;
 
-
-    ScoreModel::RawScoreWithoutMultiplier(context.noteCutInfo.swingRatingCounter, context.noteCutInfo.cutDistanceToCenter, byref(before), byref(after), byref(accuracy));
+    ScoreModel::RawScoreWithoutMultiplier(counter, noteCutInfo.cutDistanceToCenter, byref(before), byref(after), byref(accuracy));
     int total = before + after + accuracy;
-    float timeDependence = std::abs(context.noteCutInfo.cutNormal.z);
-    if(context.flyingScoreEffect) {
-        //context.flyingScoreEffect->maxCutDistanceScoreIndicator->set_enabled(true);
-        HSV::checkJudgments(context.flyingScoreEffect, total, before, after, accuracy, timeDependence);
+    float timeDependence = std::abs(noteCutInfo.cutNormal.z);
+    HSV::checkJudgments(self, total, before, after, accuracy, timeDependence);
+    if(isFinish)
         swingRatingMap.erase(itr);
-    }
-    //noteCutInfo.swingRatingCounter->UnregisterDidFinishReceiver(reinterpret_cast<GlobalNamespace::ISaberSwingRatingCounterDidFinishReceiver*>(hsvRatingCounter));
 }
 
 MAKE_HOOK_MATCH(InitFlyingScoreEffect, &FlyingScoreEffect::InitAndPresent, void, FlyingScoreEffect* self, ByRef<NoteCutInfo> noteCutInfo, int multiplier, float duration, Vector3 targetPos, Quaternion rotation, Color color) {
@@ -169,7 +155,6 @@ MAKE_HOOK_MATCH(InitFlyingScoreEffect, &FlyingScoreEffect::InitAndPresent, void,
 
             auto transform = self->get_transform();
             transform->set_position(targetPos);
-
 
             if(currentEffect) {
                 //currentEffect->duration = 0;
@@ -188,27 +173,19 @@ MAKE_HOOK_MATCH(InitFlyingScoreEffect, &FlyingScoreEffect::InitAndPresent, void,
         self->text->set_text(il2cpp_utils::newcsstr(""));
         self->maxCutDistanceScoreIndicator->set_enabled(false);
 
-        //
-        //hsvRatingCounter->swingRatingCounterFunction = [=](GlobalNamespace::ISaberSwingRatingCounter* saber) { Judge(self, noteCutInfo.heldRef, hsvRatingCounter); };
-
-        JudgeNoContext(self, noteCutInfo.heldRef);
-
-        auto counter = noteCutInfo.heldRef.swingRatingCounter;
-
-        GlobalNamespace::NoteCutInfo info = noteCutInfo.heldRef;
-
-        swingRatingMap.insert(std::make_pair(counter, swingRatingCounter_context{info, self}));
-
-
-
-        //noteCutInfo.heldRef.swingRatingCounter->UnregisterDidFinishReceiver(reinterpret_cast<GlobalNamespace::ISaberSwingRatingCounterDidFinishReceiver*>(hsvRatingCounter));
-        //noteCutInfo.heldRef.swingRatingCounter->RegisterDidFinishReceiver(reinterpret_cast<GlobalNamespace::ISaberSwingRatingCounterDidFinishReceiver*>(hsvRatingCounter));
+        // store note cut info for time dependence
+        swingRatingMap.insert(std::make_pair(self->saberSwingRatingCounter, noteCutInfo.heldRef));
     }
 }
 
-MAKE_HOOK_MATCH(HandleSwingFinish, &GlobalNamespace::BeatmapObjectExecutionRatingsRecorder_CutScoreHandler::HandleSaberSwingRatingCounterDidFinish, void, GlobalNamespace::BeatmapObjectExecutionRatingsRecorder_CutScoreHandler* self, ISaberSwingRatingCounter* counter) {
+MAKE_HOOK_MATCH(HandleSwingChange, &FlyingScoreEffect::HandleSaberSwingRatingCounterDidChange, void, FlyingScoreEffect* self, ISaberSwingRatingCounter* counter, float rating) {
+    HandleSwingChange(self, counter, rating);
+    Judge(self, counter, false);
+}
+
+MAKE_HOOK_MATCH(HandleSwingFinish, &FlyingScoreEffect::HandleSaberSwingRatingCounterDidFinish, void, FlyingScoreEffect* self, ISaberSwingRatingCounter* counter) {
     HandleSwingFinish(self, counter);
-    Judge(counter);
+    Judge(self, counter, true);
 }
 
 MAKE_HOOK_MATCH(FlyingScoreEffectFinish, &GlobalNamespace::FlyingScoreSpawner::HandleFlyingObjectEffectDidFinish, void, FlyingScoreSpawner* self, FlyingObjectEffect* flyingObjectEffect) {
@@ -271,7 +248,6 @@ void SelectButtonConfig() {
             currentConfig = filename;
             HSV::loadConfig();
             getLogger().debug("Selected filename %s", filename.c_str());
-            getLogger().info("%s", HSV::config.judgments[0].text.value().c_str());
             displaySelectedText->set_text(il2cpp_utils::newcsstr("Current Config: " + getPluginConfig().SelectedConfig.GetValue()));
         }
     }
@@ -357,16 +333,12 @@ std::optional<const Segment> HSV::getBestSegment(std::vector<Segment>& segments,
         return std::nullopt;
     }
     int bestIdx = 0;
-    for (auto& s : segments) {
-        getLogger().debug("Segment: %s, %u", s.text.value_or(std::string()).c_str(), s.threshold);
-    }
     for (int i = 1; i < size; i++) {
         if (comparison >= segments[bestIdx].threshold) {
             break;
         }
         bestIdx = i;
     }
-    getLogger().debug("Got best segment: %s for: %u", segments[bestIdx].text.value_or("").c_str(), comparison);
     return segments[bestIdx];
 }
 
@@ -376,16 +348,12 @@ std::optional<const TimeSegment> HSV::getBestTimeSegment(std::vector<TimeSegment
         return std::nullopt;
     }
     int bestIdx = 0;
-    for (auto& s : segments) {
-        getLogger().debug("Segment: %s, %f", s.text.value_or(std::string()).c_str(), s.threshold);
-    }
     for (int i = 1; i < size; i++) {
         if (comparison >= segments[bestIdx].threshold) {
             break;
         }
         bestIdx = i;
     }
-    getLogger().debug("Got best segment: %s for: %u", segments[bestIdx].text.value_or("").c_str(), comparison);
     return segments[bestIdx];
 }
 
@@ -411,12 +379,12 @@ UnityEngine::Color HSV::JudgeColor(int score, int before, int after, int accurac
     return config.judgments[bestIndex].color.value();
 }
 
-std::string HSV::JudgeSegment(int scoreForSegment, std::vector<Segment> judgments) {
-    if(judgments.size() == 0) {
-        std::string();
+std::string HSV::JudgeSegment(int scoreForSegment, std::vector<Segment> segments) {
+    if(segments.size() == 0) {
+        return std::string();
     }
 
-    Segment bestSegment = getBestSegment(judgments, scoreForSegment).value();
+    Segment bestSegment = getBestSegment(segments, scoreForSegment).value();
 
     if(bestSegment.text.value().empty())
         return std::string();
@@ -426,7 +394,7 @@ std::string HSV::JudgeSegment(int scoreForSegment, std::vector<Segment> judgment
 
 std::string HSV::JudgeTimeSegment(int scoreForSegment, std::vector<TimeSegment> judgments) {
     if(judgments.size() == 0) {
-        std::string();
+        return std::string();
     }
 
     TimeSegment bestSegment = getBestTimeSegment(judgments, scoreForSegment).value();
@@ -446,70 +414,21 @@ std::string HSV::ConvertTimeDependencePrecision(float timeDependence, int decima
 }
 
 std::string HSV::DisplayModeFormat(int score, int before, int after, int accuracy, float timeDependence, const Judgment& judgment) {
-    auto formatString = judgment.text.value();
-    std::string buildString;
-    auto nextPercentIndex = formatString.find('%');
-    if(nextPercentIndex == -1)
-        return judgment.text.value();
-    while(nextPercentIndex != -1) {
-        buildString.append(formatString.substr(0, nextPercentIndex));
-        if(formatString.length() == nextPercentIndex + 1) {
-            formatString += " ";
-        }
+    auto text = judgment.text.value();
+    text.set_beforeCut(std::to_string(before));
+    text.set_accuracy(std::to_string(accuracy));
+    text.set_afterCut(std::to_string(after));
+    text.set_score(std::to_string(score));
+    text.set_percent(string_format("%f", std::round(score / 115 * 100)));
+    text.set_timeDependency(ConvertTimeDependencePrecision(timeDependence, config.timeDependencyDecimalOffset, config.timeDependencyDecimalPrecision));
+    text.set_beforeCutSegment(JudgeSegment(before, config.beforeCutAngleJudgments));
+    text.set_accuracySegment(JudgeSegment(accuracy, config.accuracyJudgments));
+    text.set_afterCutSegment(JudgeSegment(after, config.afterCutAngleJudgments));
+    text.set_timeDependencySegment(JudgeTimeSegment(timeDependence, config.timeDependencyJudgments));
 
-        auto specifier = formatString[nextPercentIndex + 1];
-
-        switch (specifier) {
-            case 'b':
-                buildString.append(std::to_string(before));
-                break;
-            case 'c':
-                buildString.append(std::to_string(accuracy));
-                break;
-            case 'a':
-                buildString.append(std::to_string(after));
-                break;
-            case 't':
-                buildString.append(ConvertTimeDependencePrecision(timeDependence, config.timeDependencyDecimalOffset, config.timeDependencyDecimalPrecision));
-                break;
-            case 'B':
-                buildString.append(JudgeSegment(before, config.beforeCutAngleJudgments));
-                break;
-            case 'C':
-                buildString.append(JudgeSegment(accuracy, config.accuracyJudgments));
-                break;
-            case 'A':
-                buildString.append(JudgeSegment(after, config.afterCutAngleJudgments));
-                break;
-            case 'T':
-                buildString.append(JudgeTimeSegment(timeDependence, config.timeDependencyJudgments));
-                break;
-            case 's':
-                buildString.append(std::to_string(score));
-                break;
-            case 'p':
-                buildString.append(string_format("%f", std::round(score / 115 * 100)));
-                break;
-            case '%':
-                buildString.append("%");
-                break;
-            case '>':
-                buildString.append("%>");
-                break;
-            case 'n':
-                buildString.append("\n");
-                break;
-            default:
-                buildString.append(("%" + to_string(specifier)));
-                break;
-        }
-
-        formatString = formatString.erase(0, nextPercentIndex + 2);
-        nextPercentIndex = formatString.find('%');
-    }
-
-    getLogger().info("%s", buildString.c_str());
-    return buildString;
+    std::string s = text.Join();
+    getLogger().debug("Calculated score %s", s.c_str());
+    return s;
 }
 
 extern "C" void load() {
@@ -521,6 +440,7 @@ extern "C" void load() {
     QuestUI::Register::RegisterMainMenuModSettingsViewController(modInfo, DidActivate);
     HSV::loadConfig();
     INSTALL_HOOK(getLogger(), InitFlyingScoreEffect);
+    INSTALL_HOOK(getLogger(), HandleSwingChange);
     INSTALL_HOOK(getLogger(), HandleSwingFinish);
     INSTALL_HOOK(getLogger(), FlyingScoreEffectFinish);
     INSTALL_HOOK(getLogger(), FlyingScoreEffectManualUpdate);

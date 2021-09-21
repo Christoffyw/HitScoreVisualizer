@@ -1,5 +1,6 @@
 #include "PluginConfig.hpp"
 #include "main.hpp"
+#include "TokenizedText.hpp"
 
 #define GET(obj, fieldName, method, required) auto itr = obj.FindMember(fieldName.data()); \
 if (itr == obj.MemberEnd()) { \
@@ -22,7 +23,7 @@ std::optional<const char*> getString(rapidjson::Value& obj, std::string_view fie
     GET(obj, fieldName, GetString, required);
 }
 
-std::optional<std::string> getText(rapidjson::Value& obj, std::string_view fieldName, bool required) {
+std::optional<TokenizedText> getText(rapidjson::Value& obj, std::string_view fieldName, bool required) {
     auto itr = obj.FindMember(fieldName.data());
     if (itr == obj.MemberEnd()) {
         if (required) {
@@ -30,7 +31,7 @@ std::optional<std::string> getText(rapidjson::Value& obj, std::string_view field
         }
         return std::nullopt;
     }
-    return std::string(itr->value.GetString());
+    return TokenizedText(std::string(itr->value.GetString()));
 }
 
 std::optional<bool> getBool(rapidjson::Value& obj, std::string_view fieldName, bool required) {
@@ -176,7 +177,7 @@ void ConfigHelper::AddJSONJudgment(rapidjson::MemoryPoolAllocator<>& allocator, 
     rapidjson::Value v(rapidjson::kObjectType);
     v.AddMember("threshold", j.threshold, allocator);
     if (j.text) {
-        auto text = j.text->c_str();
+        auto text = j.text->original.c_str();
         logger.debug("Adding text field: %s", text);
         v.AddMember("text", rapidjson::GenericStringRef<char>(text), allocator);
     }
@@ -249,13 +250,13 @@ bool ConfigHelper::LoadConfig(HSVConfig& con, ConfigDocument& config) {
     HSVConfig newCon;
 
     static auto logger = getLogger().WithContext("ConfigHelper").WithContext("LoadConfig");
-    logger.debug("got passed object check");
+    logger.debug("got passed object check"); // past?
 
     std::vector<Judgment> judgments;
     getJudgments(judgments, config);
 
     for (std::vector<Judgment>::const_iterator i = judgments.begin(); i != judgments.end(); ++i)
-        logger.info("%s", i->text->c_str());
+        logger.info("%s", i->text->original.c_str());
     // Default to true.
     // This allows us to forcibly regenerate the config if it doesn't load properly and doesn't have this property.
     newCon.isDefaultConfig = getBool(config, "isDefaultConfig").value_or(true);

@@ -18,11 +18,12 @@
 #include <string>
 #include <iostream>
 
-
 #include "beatsaber-hook/shared/config/config-utils.hpp"
 #include "beatsaber-hook/shared/utils/typedefs.h"
 #include "config-utils/shared/config-utils.hpp"
 #include "UnityEngine/Color.hpp"
+
+#include "TokenizedText.hpp"
 
 typedef enum ConfigType {
     CONFIG_TYPE_STANDARD
@@ -33,7 +34,7 @@ typedef enum ConfigType {
 std::optional<const int> getInt(rapidjson::Value& obj, std::string_view fieldName, bool required = false);
 std::optional<float> getFloat(rapidjson::Value& obj, std::string_view fieldName, bool required = false);
 std::optional<const char*> getString(rapidjson::Value& obj, std::string_view fieldName, bool required = false);
-std::optional<std::string> getText(rapidjson::Value& obj, std::string_view fieldName, bool required = false);
+std::optional<TokenizedText> getText(rapidjson::Value& obj, std::string_view fieldName, bool required = false);
 std::optional<bool> getBool(rapidjson::Value& obj, std::string_view fieldName, bool required = false);
 
 class Judgment {
@@ -42,7 +43,7 @@ public:
     int threshold;
     // HSV specific text to display.
     // Supports TMP text and % operators.
-    std::optional<std::string> text;
+    std::optional<TokenizedText> text;
     // The color to use, if it is valid.
     std::optional<UnityEngine::Color> color;
     // Whether to fade between colors, if possible.
@@ -63,20 +64,19 @@ public:
     // TMP text to display.
     std::optional<std::string> text;
 
-
     void SetText(std::string text, int threshold = 0) {
         this->threshold = threshold;
         this->text.emplace(text);
     }
 };
 
+// segment but with floats
 class TimeSegment {
 public:
     // Threshold that the score portion must be greater than or equal to.
     float threshold;
     // TMP text to display.
     std::optional<std::string> text;
-
 
     void SetText(std::string text, float threshold = 0) {
         this->threshold = threshold;

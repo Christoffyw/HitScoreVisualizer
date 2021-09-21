@@ -3,10 +3,10 @@
     "name": "Hit Score Visualizer",
     "id": "hitscore",
     "author": "Christoffyw",
-    "version": "2.1.0",
+    "version": "2.3.0",
     "coverImage": "Cover.jpg",
     "packageId": "com.beatgames.beatsaber",
-    "packageVersion": "1.17.0",
+    "packageVersion": "1.17.1",
     "description": "Changes the scores that pop up when you hit notes.",
     "type": "Gameplay",
     "modFiles": [
