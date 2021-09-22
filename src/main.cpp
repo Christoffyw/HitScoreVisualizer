@@ -427,7 +427,7 @@ std::string HSV::DisplayModeFormat(int score, int before, int after, int accurac
     text.set_timeDependencySegment(JudgeTimeSegment(timeDependence, config.timeDependencyJudgments));
 
     std::string s = text.Join();
-    getLogger().debug("Calculated score %s", s.c_str());
+    // getLogger().debug("Calculated score %s", s.c_str());
     return s;
 }
 
