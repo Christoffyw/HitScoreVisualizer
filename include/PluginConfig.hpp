@@ -12,6 +12,7 @@
 #include "beatsaber-hook/shared/utils/byref.hpp"
 #include "UnityEngine/MonoBehaviour.hpp"
 #include "UnityEngine/Color.hpp"
+#include "UnityEngine/Vector3.hpp"
 #include "custom-types/shared/macros.hpp"
 #include "custom-types/shared/types.hpp"
 #include "custom-types/shared/register.hpp"
@@ -36,6 +37,7 @@ std::optional<float> getFloat(rapidjson::Value& obj, std::string_view fieldName,
 std::optional<const char*> getString(rapidjson::Value& obj, std::string_view fieldName, bool required = false);
 std::optional<TokenizedText> getText(rapidjson::Value& obj, std::string_view fieldName, bool required = false);
 std::optional<bool> getBool(rapidjson::Value& obj, std::string_view fieldName, bool required = false);
+std::optional<UnityEngine::Vector3*> getVector3(rapidjson::Value& obj, std::string_view fieldName, bool required = false);
 
 class Judgment {
 public:
@@ -88,15 +90,10 @@ class HSVConfig {
 public:
     // True: Will cause the config to be overwritten on updates
     bool isDefaultConfig;
-    // True: Will use fixedPosX, fixedPosY, fixedPosZ to anchor the visualization in place.
-    // Works for images.
-    bool useFixedPos;
-    // Fixed X Position
-    float fixedPosX;
-    // Fixed Y Position
-    float fixedPosY;
-    // Fixed Z Position
-    float fixedPosZ;
+    // Fixed Position
+    UnityEngine::Vector3* fixedPosition;
+    
+    UnityEngine::Vector3* targetPositionOffset;
 
     int timeDependencyDecimalPrecision;
     int timeDependencyDecimalOffset;
@@ -124,6 +121,7 @@ public:
     static void AddJSONTimeSegment(rapidjson::Document::AllocatorType& allocator, rapidjson::Document::ValueType& arr, TimeSegment& s);
     static void CreateJSONTimeSegments(rapidjson::MemoryPoolAllocator<>& allocator, ConfigDocument& config, std::vector<TimeSegment>& vector, std::string_view name);
     static void AddJSONJudgment(rapidjson::MemoryPoolAllocator<>& allocator, rapidjson::Document::ValueType& arr, Judgment& j);
+    static void CreateVector3(rapidjson::MemoryPoolAllocator<>& allocator, ConfigDocument& config, UnityEngine::Vector3* vector, std::string_view name);
 };
 
 DECLARE_CONFIG(PluginConfig,

@@ -1,6 +1,7 @@
 #include "PluginConfig.hpp"
 #include "main.hpp"
 #include "TokenizedText.hpp"
+#include "UnityEngine/Vector3.hpp"
 
 #define GET(obj, fieldName, method, required) auto itr = obj.FindMember(fieldName.data()); \
 if (itr == obj.MemberEnd()) { \
@@ -36,6 +37,25 @@ std::optional<TokenizedText> getText(rapidjson::Value& obj, std::string_view fie
 
 std::optional<bool> getBool(rapidjson::Value& obj, std::string_view fieldName, bool required) {
     GET(obj, fieldName, GetBool, required);
+}
+
+std::optional<UnityEngine::Vector3*> getVector3(rapidjson::Value& obj, std::string_view fieldName, bool required) {
+    auto itr = obj.FindMember(fieldName.data());
+    if (itr == obj.MemberEnd()) {
+        if (required) {
+            getLogger().warning("Failed to find required field: %s! Could not load config", fieldName.data());
+        }
+        return std::nullopt;
+    }
+    auto posX = itr->value.FindMember("x");
+    auto posY = itr->value.FindMember("y");
+    auto posZ = itr->value.FindMember("z");
+    
+    if(posX == itr->value.MemberEnd() || posY == itr->value.MemberEnd() || posZ == itr->value.MemberEnd())
+        return std::nullopt;
+
+    auto vector = UnityEngine::Vector3(posX->value.GetFloat(), posY->value.GetFloat(), posZ->value.GetFloat());
+    return &vector;
 }
 
 void Judgment::SetText(std::string text, UnityEngine::Color color, int threshold, bool fade) {
@@ -241,6 +261,14 @@ void ConfigHelper::CreateJSONTimeSegments(rapidjson::MemoryPoolAllocator<>& allo
     config.AddMember(rapidjson::GenericStringRef<char>(name.data()), arr, allocator);
 }
 
+void ConfigHelper::CreateVector3(rapidjson::MemoryPoolAllocator<>& allocator, ConfigDocument& config, UnityEngine::Vector3* vector, std::string_view name) {
+    rapidjson::Value v(rapidjson::kObjectType);
+    v.AddMember("x", vector->x, allocator);
+    v.AddMember("y", vector->y, allocator);
+    v.AddMember("z", vector->z, allocator);
+    config.AddMember(rapidjson::GenericStringRef<char>(name.data()), v, allocator);
+}
+
 bool ConfigHelper::LoadConfig(HSVConfig& con, ConfigDocument& config) {
     if (!config.IsObject()) {
         con.SetToDefault();
@@ -269,13 +297,33 @@ bool ConfigHelper::LoadConfig(HSVConfig& con, ConfigDocument& config) {
 
     // Default to standard type
     newCon.type = (ConfigType_t)getInt(config, "type").value_or(CONFIG_TYPE_STANDARD);
+    
+    newCon.fixedPosition = getVector3(config, "fixedPosition").value_or(nullptr);
 
-    // Default to false
-    newCon.useFixedPos = getBool(config, "useFixedPos").value_or(false);
     // Default to 0
-    newCon.fixedPosX = getFloat(config, "fixedPosX").value_or(0);
-    newCon.fixedPosY = getFloat(config, "fixedPosY").value_or(0);
-    newCon.fixedPosZ = getFloat(config, "fixedPosZ").value_or(0);
+    bool useOldVals = false;
+    std::optional<float> fixedPosX = getFloat(config, "fixedPosX");
+    std::optional<float> fixedPosY = getFloat(config, "fixedPosY");
+    std::optional<float> fixedPosZ = getFloat(config, "fixedPosZ");
+    // keep compatibility with old format configs
+    if(fixedPosX != std::nullopt)
+        useOldVals = true;
+    else fixedPosX = 0;
+    if(fixedPosY != std::nullopt)
+        useOldVals = true;
+    else fixedPosY = 0;
+    if(fixedPosZ != std::nullopt)
+        useOldVals = true;
+    else fixedPosZ = 0;
+
+    useOldVals = getBool(config, "useFixedPos").value_or("false");
+
+    if(useOldVals) {
+        auto vector = UnityEngine::Vector3(fixedPosX.value(), fixedPosY.value(), fixedPosZ.value());
+        newCon.fixedPosition = &vector;
+    }
+    
+    newCon.targetPositionOffset = getVector3(config, "targetPositionOffset").value_or(nullptr);
 
     newCon.timeDependencyDecimalPrecision = getInt(config, "timeDependencyDecimalPrecision").value_or(1);
     newCon.timeDependencyDecimalOffset = getInt(config, "timeDependencyDecimalOffset").value_or(2);
@@ -309,10 +357,10 @@ void HSVConfig::WriteToConfig(ConfigDocument& config) {
     // Set metadata
     logger.debug("Starting metadata");
     config.AddMember("type", type, allocator); // Type can be: 0: Standard, 1: Christmas, 2: Easter, etc.
-    config.AddMember("useFixedPos", useFixedPos, allocator);
-    config.AddMember("fixedPosX", fixedPosX, allocator);
-    config.AddMember("fixedPosY", fixedPosY, allocator);
-    config.AddMember("fixedPosZ", fixedPosZ, allocator);
+    if(fixedPosition)
+        ConfigHelper::CreateVector3(allocator, config, fixedPosition, "fixedPosition");
+    if(targetPositionOffset)
+        ConfigHelper::CreateVector3(allocator, config, targetPositionOffset, "targetPositionOffset");
     config.AddMember("timeDependencyDecimalPrecision", timeDependencyDecimalPrecision, allocator);
     config.AddMember("timeDependencyDecimalOffset", timeDependencyDecimalOffset, allocator);
     config.AddMember("isDefaultConfig", isDefaultConfig, allocator);
@@ -337,10 +385,6 @@ void HSVConfig::SetToDefault() {
     afterCutAngleJudgments[0].SetText("+", 30);
     afterCutAngleJudgments[1].SetText(" ");
     timeDependencyJudgments = std::vector<TimeSegment>(0);
-    useFixedPos = false;
-    fixedPosX = 0;
-    fixedPosY = 0;
-    fixedPosZ = 0;
     timeDependencyDecimalPrecision = 1;
     timeDependencyDecimalOffset = 2;
     type = CONFIG_TYPE_STANDARD;

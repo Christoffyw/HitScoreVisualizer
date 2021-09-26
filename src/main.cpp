@@ -147,11 +147,13 @@ void Judge(FlyingScoreEffect* self, ISaberSwingRatingCounter* counter, bool isFi
 
 MAKE_HOOK_MATCH(InitFlyingScoreEffect, &FlyingScoreEffect::InitAndPresent, void, FlyingScoreEffect* self, ByRef<NoteCutInfo> noteCutInfo, int multiplier, float duration, Vector3 targetPos, Quaternion rotation, Color color) {
     if(getPluginConfig().IsEnabled.GetValue()) {
-        if(HSV::config.useFixedPos) {
+        if(HSV::config.targetPositionOffset) {
+            
+            targetPos = *(HSV::config.targetPositionOffset);
+            
+        } else if(HSV::config.fixedPosition) {
 
-            targetPos.x = HSV::config.fixedPosX;
-            targetPos.y = HSV::config.fixedPosY;
-            targetPos.z = HSV::config.fixedPosZ;
+            targetPos = *(HSV::config.fixedPosition);
 
             auto transform = self->get_transform();
             transform->set_position(targetPos);
