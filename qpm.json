@@ -2,36 +2,42 @@
   "sharedDir": "shared",
   "dependenciesDir": "extern",
   "info": {
-    "name": "Hit Score Visualizer",
+    "name": "HitScoreVisualizer",
     "id": "hitscore",
     "version": "0.1.0",
     "url": null,
-    "additionalData": {}
+    "additionalData": {
+      "overrideSoName": "libhitscore.so"
+    }
   },
   "dependencies": [
     {
+      "id": "beatsaber-hook",
+      "versionRange": "=3.6.4",
+      "additionalData": {
+        "extraFiles": [
+          "src/inline-hook"
+        ]
+      }
+    },
+    {
+      "id": "modloader",
+      "versionRange": "=1.2.3",
+      "additionalData": {}
+    },
+    {
       "id": "codegen",
-      "versionRange": "*",
+      "versionRange": "^0.18.0",
       "additionalData": {}
     },
     {
       "id": "questui",
-      "versionRange": "*",
+      "versionRange": "^0.12.0",
       "additionalData": {}
     },
     {
       "id": "custom-types",
-      "versionRange": "*",
-      "additionalData": {}
-    },
-    {
-      "id": "config-utils",
-      "versionRange": "*",
-      "additionalData": {}
-    },
-    {
-      "id": "beatsaber-hook",
-      "versionRange": "^2.0.0",
+      "versionRange": "^0.14.0",
       "additionalData": {}
     }
   ],
