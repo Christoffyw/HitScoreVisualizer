@@ -24,30 +24,12 @@ The installation is fairly simple.
 Having it all installed, you might wonder how you actually use this version compared to the original one. The first important thing that you'll need to know, is that it now has support for multiple
 configs which means that you won't have to restart your game anymore in order to change a config.
 
-On the first run, it will create a new folder `UserData\HitScoreVisualizer` (and a default config for those who didn't have one yet).
+On the first run, it will create a new folder `/sdcard/ModData/com.beatgames.beatsaber/Mods/HitScoreVisualizer` (and a default config for those who didn't have one yet).
 In that folder, you can drop all your HSV config files. It doesn't even matter if you create new folders in that folder, HSV will still be able to find them all. One remark about this though... while
 you can have config files with the same name when using folder structures, **I still strongly advise you to use unique config filenames** because, despite HSV being able to handle them just fine, config
 files will appear in-game with only their filename, and you might end up with several files in the list that have the same one.
 
 Having dropped your config files in the folder doesn't mean you're ready to go yet as you still need to select it in-game.
-It's pretty straight-forward to do so, but follow the steps below if you really want to be sure.
-
-1) You'll need to start up Beat Saber (you don't have to restart it if it was still running though)
-2) Select HitScoreVisualizer in the mod list on the left side.
-3) Push the 'SELECT' button
-4) Profit I guess?
-
-As you might have noticed, each config has a text below its name that describes it current state. You can find all the possible config states in the table below.
-
-| State (internal) | Text shown in-game | Description |
-| --- | --- | --- |
-| Broken | Invalid config. Not selectable... | Means that the file cannot be loaded, it's either not a valid HSV config file or not a config file at all. |
-| Incompatible | Config is too old. Targets version {Version} | The config is too old and therefore can't be migrated to the newer format automagically. |
-| ValidationFailed | Validation failed, please check the file again. | You made an error in the config itself, you can check the logs to see what might be wrong (will be logged as a warning). |
-| NeedsMigration | Config made for HSV {Version}. Migration possible. | The config is valid, but still needs a migration to the newer format, this can be done automagically though. |
-| Compatible | OK - {Version} | The config file is just fine, nothing special needs to happen. Shows the version for which it was originally made. |
-| NewerVersion | Config is too new. Targets version {Version} | The config file is made for a newer version of HSV and therefore won't be allowed to be loaded in as it's correct workings cannot be guaranteed. |
-
 
 ## How-To Config? (aka config explained)
 
@@ -117,40 +99,15 @@ You can use that file as a starting point in case you want to customize it. Just
 | %n | A newline. |
 
 
-## Developers
-
-To build this project you will need to create a `HitScoreVisualizer/HitScoreVisualizer.csproj.user` file specifying where the game is located.
-This can be done using either of the following options:
-
-1) Create the file using the [BSMT Visual Studio extension](https://github.com/Zingabopp/BeatSaberModdingTools).
-2) Manually create the file, copy the xml below into the file and change the path to your accomodate for your installation. The file shows up as a missing file in the solution explorer, so it should be easy to spot.
-
-```xml
-<?xml version="1.0" encoding="utf-8"?>
-<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-	<PropertyGroup>
-		<!-- Change this path if necessary. Make sure it ends with a backslash. -->
-		<BeatSaberDir>D:\Program Files (x86)\Steam\steamapps\common\Beat Saber\</BeatSaberDir>
-	</PropertyGroup>
-</Project>
-```
-
-## Changelog
-x.x.x: Probably created and such, no clue here...<br>
-2.0.2: Bug fixes and performance improvements. If you've been noticing lag, try disabling the fade option on all Judgments in the config.<br>
-2.1.0: Added display mode "format" (see below).<br>
-2.1.2: Actually bump version number this time; minor fixes to default config<br>
-2.1.3: Minor bug fix<br>
-x.x.x: Probably a few more changes and such, no clue here either...<br>
-3.0.0: Big rewrite! Support for changing configs at runtime, better validation, ...
-
 ## Useful links
 
 [HSV Config Creator by @MoreOwO](https://github.com/MoreOwO/HSV-Config-Creator/releases/latest): A program that helps you create configs for HSV.
 
 ## Credits
 Credit where credit is due:
- - [@artemiswkearney](https://github.com/artemiswkearney) for writing the original mod
- - @AntRazor for the mod idea/request and default config input in the original mod
- - @wulkanat for the default config input in the original mod
- - Everyone in #pc-mod-dev (and the rest of the server) for the love and support. ❤
+* [@ErisApps](https://github.com/ErisApps) for maintaining the PC mod
+* [@Metalit](https://github.com/Metalit) for doing a lot of the work
+* [zoller27osu](https://github.com/zoller27osu), [Sc2ad](https://github.com/Sc2ad) and [jakibaki](https://github.com/jakibaki) - [beatsaber-hook](https://github.com/sc2ad/beatsaber-hook)
+* [raftario](https://github.com/raftario) 
+* [Lauriethefish](https://github.com/Lauriethefish) and [danrouse](https://github.com/danrouse) for [this template](https://github.com/Lauriethefish/quest-mod-template)
+* Everyone in #quest-mod-dev
