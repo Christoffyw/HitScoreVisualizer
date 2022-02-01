@@ -1,40 +1,14 @@
 Param(
-    [String] $qmodname="",
-
+    [String]$qmodname="HitScoreVisualizer",
     [Parameter(Mandatory=$false)]
-    [Switch] $clean,
-
-    [Parameter(Mandatory=$false)]
-    [Switch] $help
+    [Switch]$clean
 )
-
-if ($help -eq $true) {
-    echo "`"BuildQmod <qmodName>`" - Copiles your mod into a `".so`" or a `".a`" library"
-    echo "`n-- Parameters --`n"
-    echo "qmodName `t The file name of your qmod"
-
-    echo "`n-- Arguments --`n"
-
-    echo "-Clean `t`t Performs a clean build on both your library and the qmod"
-
-    exit
-}
 
 if ($qmodName -eq "")
 {
     echo "Give a proper qmod name and try again"
     exit
 }
-
-& $PSScriptRoot/build.ps1 -clean:$clean
-
-if ($LASTEXITCODE -ne 0) {
-    echo "Failed to build, exiting..."
-    exit $LASTEXITCODE
-}
-
-echo "Creating qmod from mod.json"
-
 $mod = "./mod.json"
 $modJson = Get-Content $mod -Raw | ConvertFrom-Json
 
@@ -42,13 +16,13 @@ $filelist = @($mod)
 
 $cover = "./" + $modJson.coverImage
 if ((-not ($cover -eq "./")) -and (Test-Path $cover))
-{ 
+{
     $filelist += ,$cover
 }
 
 foreach ($mod in $modJson.modFiles)
 {
-    $path = "./build/" + $mod
+        $path = "./build/" + $mod
     if (-not (Test-Path $path))
     {
         $path = "./extern/libs/" + $mod
