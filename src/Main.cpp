@@ -141,18 +141,6 @@ extern "C" void setup(ModInfo& info) {
     info.id = ID;
     info.version = VERSION;
     modInfo = info;
-
-    try {
-        throw std::runtime_error("const& error");
-    } catch(std::runtime_error const& e) {
-        LOG_INFO("error caught, %s", e.what());
-    }
-    
-    try {
-        throw std::runtime_error("non const& error");
-    } catch(std::runtime_error e) {
-        LOG_INFO("error caught, %s", e.what());
-    }
     
     if(!direxists(ConfigsPath()))
         mkpath(ConfigsPath());
