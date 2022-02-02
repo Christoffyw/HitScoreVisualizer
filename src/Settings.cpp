@@ -16,11 +16,11 @@ TMPro::TextMeshProUGUI* selectedConfig;
 void ButtonSelected() {
     for(auto& button : buttonList)  {
         if(button->hasSelection) {
-            std::string filename = to_utf8(csstrtostr(button->GetComponentInChildren<TMPro::TextMeshProUGUI*>()->get_text()));
+            std::string filename = button->GetComponentInChildren<TMPro::TextMeshProUGUI*>()->get_text();
             globalConfig.SelectedConfig = filename + ".json";
             WriteToFile(GlobalConfigPath(), globalConfig);
             LoadCurrentConfig();
-            selectedConfig->set_text(CSTR("Current Config: " + filename));
+            selectedConfig->set_text("Current Config: " + filename);
         }
     }
 }
@@ -32,7 +32,7 @@ void RefreshConfigList() {
     }
     buttonList.clear();
 
-    for(auto& entry : std::filesystem::directory_iterator(ConfigsPath())) {
+    for(auto& entry : std::filesystem::recursive_directory_iterator(ConfigsPath())) {
         if (entry.path().extension() == ".json") {
             UnityEngine::UI::Button* button = BeatSaberUI::CreateUIButton(scrollView->get_transform(), entry.path().stem().string(), ButtonSelected);
             button->GetComponentInChildren<TMPro::TextMeshProUGUI*>()->set_fontStyle(2);

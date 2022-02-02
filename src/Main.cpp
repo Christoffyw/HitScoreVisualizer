@@ -43,13 +43,17 @@ bool LoadCurrentConfig() {
         globalConfig.SelectedConfig = defaultConfigName;
         WriteToFile(GlobalConfigPath(), globalConfig);
     }
+    Config config;
     try {
-        Config config;
         ReadFromFile(ConfigsPath() + globalConfig.SelectedConfig, config);
         globalConfig.CurrentConfig = config;
     } catch(std::runtime_error const& e) {
         LOG_ERROR("Error loading config: %s", e.what());
-        return false;
+        if(config.IsDefault) {
+            writefile(ConfigsPath() + globalConfig.SelectedConfig, defaultConfigText);
+            return LoadCurrentConfig();
+        } else
+            return false;
     }
     return true;
 }
@@ -80,6 +84,10 @@ MAKE_HOOK_MATCH(InitFlyingScoreEffect, &FlyingScoreEffect::InitAndPresent,
     if(globalConfig.GetActive()) {
         self->maxCutDistanceScoreIndicator->set_enabled(false);
         swingRatingMap.insert({self->saberSwingRatingCounter, {noteCutInfo.heldRef, self}});
+        
+        self->text->set_richText(true);
+        self->text->set_enableWordWrapping(false);
+        self->text->set_overflowMode(TMPro::TextOverflowModes::Overflow);
 
         Judge(self->saberSwingRatingCounter, self, noteCutInfo.heldRef);
     }

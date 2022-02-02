@@ -12,7 +12,7 @@ DESERIALIZE_METHOD(HSV, Vector3,
 SERIALIZE_METHOD(HSV, Vector3)
 
 DESERIALIZE_METHOD(HSV, Judgement,
-    DESERIALIZE_VALUE(Threshold, threshold, Int)
+    DESERIALIZE_VALUE_DEFAULT(Threshold, threshold, Int, 0)
     DESERIALIZE_VALUE(UnprocessedText, text, String)
     DESERIALIZE_VECTOR_BASIC(UnprocessedColor, color, Float)
     if(UnprocessedColor.size() != 4)
@@ -25,14 +25,14 @@ DESERIALIZE_METHOD(HSV, Judgement,
 SERIALIZE_METHOD(HSV, Judgement)
 
 DESERIALIZE_METHOD(HSV, Segment,
-    DESERIALIZE_VALUE(Threshold, threshold, Int)
+    DESERIALIZE_VALUE_DEFAULT(Threshold, threshold, Int, 0)
     DESERIALIZE_VALUE(Text, text, String)
 )
 
 SERIALIZE_METHOD(HSV, Segment)
 
 DESERIALIZE_METHOD(HSV, FloatSegment,
-    DESERIALIZE_VALUE(Threshold, threshold, Float)
+    DESERIALIZE_VALUE_DEFAULT(Threshold, threshold, Float, 0)
     DESERIALIZE_VALUE(Text, text, String)
 )
 

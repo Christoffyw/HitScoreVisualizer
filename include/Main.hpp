@@ -18,8 +18,6 @@
 #define LOG_INFO(...) getLogger().info(__VA_ARGS__)
 #define LOG_ERROR(...) getLogger().error(__VA_ARGS__)
 
-#define CSTR(string) il2cpp_utils::newcsstr(string)
-
 Logger& getLogger();
 
 std::string GlobalConfigPath();
