@@ -62,7 +62,7 @@ std::string GetJudgementText(Judgement& judgement, int score, int before, int af
 }
 
 UnityEngine::Color GetJudgementColor(Judgement& judgement, int score) {
-    if(!judgement.Fade)
+    if(!judgement.Fade || !judgement.Fade.value())
         return judgement.Color;
     // get the lowest judgement with a higher threshold
     Judgement* best = nullptr;

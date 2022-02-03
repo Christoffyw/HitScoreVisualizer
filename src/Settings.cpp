@@ -28,7 +28,7 @@ void ButtonSelected() {
 void RefreshConfigList() {
     // should use an aactual list but I'm too lazy for now
     for(auto& button : buttonList) {
-        UnityEngine::Object::Destroy(button->get_transform()->get_parent()->get_gameObject());
+        UnityEngine::Object::Destroy(button->get_gameObject());
     }
     buttonList.clear();
 
