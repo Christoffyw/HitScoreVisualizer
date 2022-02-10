@@ -3,11 +3,11 @@
   "dependenciesDir": "extern",
   "info": {
     "name": "HitScoreVisualizer",
-    "id": "hitscore",
+    "id": "HitScoreVisualizer",
     "version": "3.0.0",
     "url": null,
     "additionalData": {
-      "overrideSoName": "libhitscore.so"
+      "overrideSoName": "libhitscorevisualizer.so"
     }
   },
   "dependencies": [
