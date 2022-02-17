@@ -1,15 +1,17 @@
 #include "Main.hpp"
+#include "Settings.hpp"
 #include "json/Config.hpp"
 #include "json/DefaultConfig.hpp"
 
 #include "GlobalNamespace/BeatmapObjectExecutionRatingsRecorder_CutScoreHandler.hpp"
-#include "GlobalNamespace/ColorExtensions.hpp"
+#include "GlobalNamespace/FlyingScoreEffect_Pool.hpp"
 
 #include "TMPro/TextMeshPro.hpp"
 
 #include "UnityEngine/AnimationCurve.hpp"
 #include "UnityEngine/Quaternion.hpp"
 #include "UnityEngine/SpriteRenderer.hpp"
+#include "UnityEngine/GameObject.hpp"
 #include "UnityEngine/Transform.hpp"
 
 #include "questui/shared/QuestUI.hpp"
@@ -37,15 +39,15 @@ std::string ConfigsPath() {
 }
 
 bool LoadCurrentConfig() {
-    if(!fileexists(ConfigsPath() + globalConfig.SelectedConfig)) {
+    if(!fileexists(globalConfig.SelectedConfig)) {
         LOG_ERROR("Could not find selected config!");
         writefile(ConfigsPath() + defaultConfigName, defaultConfigText);
-        globalConfig.SelectedConfig = defaultConfigName;
+        globalConfig.SelectedConfig = ConfigsPath() + defaultConfigName;
         WriteToFile(GlobalConfigPath(), globalConfig);
     }
     Config config;
     try {
-        ReadFromFile(ConfigsPath() + globalConfig.SelectedConfig, config);
+        ReadFromFile(globalConfig.SelectedConfig, config);
         globalConfig.CurrentConfig = config;
     } catch(std::runtime_error const& e) {
         LOG_ERROR("Error loading config: %s", e.what());
@@ -145,6 +147,13 @@ MAKE_HOOK_MATCH(FlyingScoreEffectManualUpdate, &FlyingScoreEffect::ManualUpdate,
     }
 }
 
+MAKE_HOOK_MATCH(FlyingScoreEffectDespawn, &FlyingScoreEffect::Pool::OnDespawned, void, FlyingScoreEffect::Pool* self, FlyingScoreEffect* item) {
+
+    FlyingScoreEffectDespawn(self, item);
+
+    item->get_gameObject()->SetActive(false);
+}
+
 extern "C" void setup(ModInfo& info) {
     info.id = ID;
     info.version = VERSION;
@@ -177,5 +186,6 @@ extern "C" void load() {
     INSTALL_HOOK(getLogger(), HandleSwingChange);
     INSTALL_HOOK(getLogger(), HandleSwingFinish);
     INSTALL_HOOK(getLogger(), FlyingScoreEffectManualUpdate);
+    INSTALL_HOOK(getLogger(), FlyingScoreEffectDespawn);
     LOG_INFO("Installed all hooks!");
 }

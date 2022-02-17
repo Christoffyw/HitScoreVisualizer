@@ -1,43 +1,48 @@
 #include "Main.hpp"
+#include "Settings.hpp"
 
 #include "HMUI/Touchable.hpp"
+#include "HMUI/TableView_ScrollPositionType.hpp"
 
 #include "questui/shared/BeatSaberUI.hpp"
-#include "questui/shared/CustomTypes/Components/ExternalComponents.hpp"
 
 #include <filesystem>
 
-using namespace QuestUI;
+DEFINE_TYPE(HSV, CustomList);
 
-std::vector<UnityEngine::UI::Button*> buttonList;
-UnityEngine::GameObject* scrollView = nullptr;
+using namespace QuestUI;
+using namespace HSV;
+
+std::vector<std::string> fullConfigPaths;
+CustomList* configList = nullptr;
 TMPro::TextMeshProUGUI* selectedConfig;
 
-void ButtonSelected() {
-    for(auto& button : buttonList)  {
-        if(button->hasSelection) {
-            std::string filename = button->GetComponentInChildren<TMPro::TextMeshProUGUI*>()->get_text();
-            globalConfig.SelectedConfig = filename + ".json";
-            WriteToFile(GlobalConfigPath(), globalConfig);
-            LoadCurrentConfig();
-            selectedConfig->set_text("Current Config: " + filename);
-        }
-    }
+void ConfigSelected(int idx) {
+    globalConfig.SelectedConfig = fullConfigPaths[idx];
+    WriteToFile(GlobalConfigPath(), globalConfig);
+    LoadCurrentConfig();
+    selectedConfig->set_text("Current Config: " + configList->data[idx]);
 }
 
 void RefreshConfigList() {
-    // should use an aactual list but I'm too lazy for now
-    for(auto& button : buttonList) {
-        UnityEngine::Object::Destroy(button->get_gameObject());
-    }
-    buttonList.clear();
+    auto& data = configList->data;
+    data.clear();
+    fullConfigPaths.clear();
+    int selectedIdx = -1;
 
     for(auto& entry : std::filesystem::recursive_directory_iterator(ConfigsPath())) {
         if (entry.path().extension() == ".json") {
-            UnityEngine::UI::Button* button = BeatSaberUI::CreateUIButton(scrollView->get_transform(), entry.path().stem().string(), ButtonSelected);
-            button->GetComponentInChildren<TMPro::TextMeshProUGUI*>()->set_fontStyle(2);
-            buttonList.push_back(button);
+            data.emplace_back(entry.path().stem().string());
+            std::string fullPath = entry.path().string();
+            fullConfigPaths.emplace_back(fullPath);
+            if(globalConfig.SelectedConfig == fullPath)
+                selectedIdx = data.size() - 1;
         }
+    }
+    configList->tableView->ReloadData();
+    if(selectedIdx >= 0) {
+        configList->tableView->SelectCellWithIdx(selectedIdx, false);
+        configList->tableView->ScrollToCellWithIdx(selectedIdx, HMUI::TableView::ScrollPositionType::Beginning, false);
     }
 }
 
@@ -61,8 +66,40 @@ void DidActivate(HMUI::ViewController* self, bool firstActivation, bool addedToH
 
         selectedConfig = BeatSaberUI::CreateText(textLayout->get_transform(), "Current Config: " + std::filesystem::path(globalConfig.SelectedConfig).stem().string(), false);
 
-        scrollView = BeatSaberUI::CreateScrollView(container->get_transform());
-        scrollView->GetComponent<ExternalComponents*>()->Get<UnityEngine::UI::LayoutElement*>()->set_minHeight(56);
+        configList = BeatSaberUI::CreateScrollableCustomSourceList<CustomList*>(container, UnityEngine::Vector2(50, 60), ConfigSelected);
     }
     RefreshConfigList();
+}
+
+void CustomList::ctor() {
+    INVOKE_CTOR();
+    expandCell = false;
+    reuseIdentifier = StringW("HSVConfigListTableCell");
+    cellSize = 8;
+    tableView = nullptr;
+}
+
+HMUI::TableCell* CustomList::CellForIdx(HMUI::TableView* tableView, int idx) {
+    auto tableCell = (GlobalNamespace::SimpleTextTableCell*) tableView->DequeueReusableCellForIdentifier(reuseIdentifier);
+    if (!tableCell) {
+        auto simpleTextTableCellInstance = UnityEngine::Resources::FindObjectsOfTypeAll<GlobalNamespace::SimpleTextTableCell*>().First([](auto x) {
+            return x->get_name() == "SimpleTextTableCell";
+        });
+        tableCell = Instantiate(simpleTextTableCellInstance);
+        tableCell->set_reuseIdentifier(reuseIdentifier);
+
+        tableCell->text->set_richText(true);
+        tableCell->text->set_enableWordWrapping(false);
+    }
+
+    tableCell->set_text(data[idx]);
+    return tableCell;
+}
+
+float CustomList::CellSize() {
+    return cellSize;
+}
+
+int CustomList::NumberOfCells() {
+    return data.size();
 }

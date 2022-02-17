@@ -27,5 +27,3 @@ extern HSV::GlobalConfig globalConfig;
 
 bool LoadCurrentConfig();
 void Judge(GlobalNamespace::ISaberSwingRatingCounter* swingCounter, GlobalNamespace::FlyingScoreEffect* flyingScoreEffect, GlobalNamespace::NoteCutInfo noteCutInfo);
-
-void DidActivate(HMUI::ViewController* self, bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling);

@@ -52,7 +52,7 @@ DECLARE_JSON_CLASS(HSV, Config,
 
 DECLARE_JSON_CLASS(HSV, GlobalConfig,
     bool ModEnabled = true;
-    std::string SelectedConfig = "HitScoreVisualizerConfig (default).json";
+    std::string SelectedConfig = "";
     std::optional<Config> CurrentConfig = std::nullopt;
 
     bool GetActive() { return ModEnabled && CurrentConfig.has_value(); }
