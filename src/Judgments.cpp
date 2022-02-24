@@ -28,7 +28,7 @@ std::string GetBestSegmentText(std::vector<Segment>& segments, int comparison) {
     return best ? best->Text : "";
 }
 
-std::string GetBestFloatSegmentText(std::vector<FloatSegment>& segments, int comparison) {
+std::string GetBestFloatSegmentText(std::vector<FloatSegment>& segments, float comparison) {
     FloatSegment* best = nullptr;
     for(auto& segment : segments) {
         if(comparison >= segment.Threshold && (!best || segment.Threshold > best->Threshold))

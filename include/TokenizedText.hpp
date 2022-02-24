@@ -40,33 +40,43 @@ class TokenizedText {
                     switch (current) {
                         case 'b':
                             beforeCutTokens.push_back(i);
+                            tokens.emplace_back("");
                             break;
                         case 'c':
                             accuracyTokens.push_back(i);
+                            tokens.emplace_back("");
                             break;
                         case 'a':
                             afterCutTokens.push_back(i);
+                            tokens.emplace_back("");
                             break;
                         case 't':
                             timeDependencyTokens.push_back(i);
+                            tokens.emplace_back("");
                             break;
                         case 'B':
                             beforeCutSegmentTokens.push_back(i);
+                            tokens.emplace_back("");
                             break;
                         case 'C':
                             accuracySegmentTokens.push_back(i);
+                            tokens.emplace_back("");
                             break;
                         case 'A':
                             afterCutSegmentTokens.push_back(i);
+                            tokens.emplace_back("");
                             break;
                         case 'T':
                             timeDependencySegmentTokens.push_back(i);
+                            tokens.emplace_back("");
                             break;
                         case 's':
                             scoreTokens.push_back(i);
+                            tokens.emplace_back("");
                             break;
                         case 'p':
                             percentTokens.push_back(i);
+                            tokens.emplace_back("");
                             break;
                         default:
                             // keep % when it doesn't correspond to a key
@@ -77,7 +87,6 @@ class TokenizedText {
                             continue;
                     }
                 }
-                tokens.emplace_back("");
                 isPercent = false;
                 i++;
                 continue;
