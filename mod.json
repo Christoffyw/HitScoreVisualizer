@@ -1,7 +1,7 @@
 {
 	"_QPVersion": "0.1.1",
 	"name": "HitScoreVisualizer",
-	"id": "hitscore",
+	"id": "HitScoreVisualizer",
 	"author": "Christoffyw, Metalit",
 	"version": "3.0.0",
 	"coverImage": "Cover.jpg",
@@ -10,7 +10,7 @@
 	"description": "Changes the scores that pop up when you hit notes",
 	"dependencies": [],
 	"modFiles": [
-		"libhitscore.so"
+		"libhitscorevisualizer.so"
 	],
 	"libraryFiles": [
 		"libbeatsaber-hook_3_6_7.so"
