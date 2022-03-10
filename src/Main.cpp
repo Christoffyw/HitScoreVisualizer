@@ -3,7 +3,9 @@
 #include "json/Config.hpp"
 #include "json/DefaultConfig.hpp"
 
-#include "GlobalNamespace/BeatmapObjectExecutionRatingsRecorder_CutScoreHandler.hpp"
+#include "GlobalNamespace/CutScoreBuffer.hpp"
+#include "GlobalNamespace/IReadonlyCutScoreBuffer.hpp"
+#include "GlobalNamespace/BeatmapObjectExecutionRating.hpp"
 #include "GlobalNamespace/FlyingScoreEffect_Pool.hpp"
 
 #include "TMPro/TextMeshPro.hpp"
@@ -65,11 +67,12 @@ GlobalConfig globalConfig{};
 // used for fixed position
 FlyingScoreEffect* currentEffect = nullptr;
 // used for updating ratings
-std::unordered_map<ISaberSwingRatingCounter*, std::pair<NoteCutInfo, FlyingScoreEffect*>> swingRatingMap = {};
+std::unordered_map<IReadonlyCutScoreBuffer*, std::pair<NoteCutInfo, FlyingScoreEffect*>> swingRatingMap = {};
 
 MAKE_HOOK_MATCH(InitFlyingScoreEffect, &FlyingScoreEffect::InitAndPresent,
-        void, FlyingScoreEffect* self, ByRef<NoteCutInfo> noteCutInfo, int multiplier, float duration, UnityEngine::Vector3 targetPos, UnityEngine::Quaternion rotation, UnityEngine::Color color) {
-    
+        void, FlyingScoreEffect* self, IReadonlyCutScoreBuffer* cutScoreBuffer, float duration, UnityEngine::Vector3 targetPos, UnityEngine::Color color) {
+
+    getLogger().info("InitAndPresent hitscore");
     if(globalConfig.GetActive()) {
         if(globalConfig.CurrentConfig->PosOffset) {
             targetPos = targetPos + globalConfig.CurrentConfig->PosOffset.value();
@@ -81,27 +84,38 @@ MAKE_HOOK_MATCH(InitFlyingScoreEffect, &FlyingScoreEffect::InitAndPresent,
         }
     }
 
-    InitFlyingScoreEffect(self, noteCutInfo, multiplier, duration, targetPos, rotation, color);
+    InitFlyingScoreEffect(self, cutScoreBuffer, duration, targetPos, color);
 
+    getLogger().info("Doing stuff with thing");
     if(globalConfig.GetActive()) {
+        if(cutScoreBuffer == nullptr) {
+            getLogger().info("CutScoreBuffer is null");
+            return;
+        }
         self->maxCutDistanceScoreIndicator->set_enabled(false);
-        swingRatingMap.insert({self->saberSwingRatingCounter, {noteCutInfo.heldRef, self}});
+        swingRatingMap.insert({self->cutScoreBuffer, {cutScoreBuffer->get_noteCutInfo(), self}});
         
         self->text->set_richText(true);
         self->text->set_enableWordWrapping(false);
         self->text->set_overflowMode(TMPro::TextOverflowModes::Overflow);
 
-        Judge(self->saberSwingRatingCounter, self, noteCutInfo.heldRef);
+        getLogger().info("Judging InitAndPresent");
+        Judge(reinterpret_cast<CutScoreBuffer *>(self->cutScoreBuffer), self, cutScoreBuffer->get_noteCutInfo());
     }
 }
 
-MAKE_HOOK_MATCH(HandleSwingChange, &FlyingScoreEffect::HandleSaberSwingRatingCounterDidChange,
-        void, FlyingScoreEffect* self, ISaberSwingRatingCounter* counter, float rating) {
+MAKE_HOOK_MATCH(HandleSwingChange, &FlyingScoreEffect::HandleCutScoreBufferDidChange,
+        void, FlyingScoreEffect* self, CutScoreBuffer* cutScoreBuffer) {
 
-    HandleSwingChange(self, counter, rating);
+    HandleSwingChange(self, cutScoreBuffer);
+    getLogger().info("HandleBufferChange");
 
     if(globalConfig.GetActive()) {
-        auto itr = swingRatingMap.find(counter);
+        if(cutScoreBuffer == nullptr) {
+            getLogger().info("CutScoreBuffer is null");
+            return;
+        }
+        auto itr = swingRatingMap.find(reinterpret_cast<IReadonlyCutScoreBuffer*>(cutScoreBuffer));
         if(itr == swingRatingMap.end()) {
             LOG_ERROR("Counter was not found in swingRatingMap!");
             return;
@@ -109,17 +123,24 @@ MAKE_HOOK_MATCH(HandleSwingChange, &FlyingScoreEffect::HandleSaberSwingRatingCou
         auto& noteCutInfo = itr->second.first;
         auto& flyingScoreEffect = itr->second.second;
 
-        Judge(counter, flyingScoreEffect, noteCutInfo);
+        Judge(cutScoreBuffer, flyingScoreEffect, noteCutInfo);
+        getLogger().info("Judging BufferChange");
     }
 }
 
-MAKE_HOOK_MATCH(HandleSwingFinish, &BeatmapObjectExecutionRatingsRecorder_CutScoreHandler::HandleSaberSwingRatingCounterDidFinish,
-        void, BeatmapObjectExecutionRatingsRecorder_CutScoreHandler* self, ISaberSwingRatingCounter* counter) {
+MAKE_HOOK_MATCH(HandleSwingFinish, &FlyingScoreEffect::HandleCutScoreBufferDidFinish,
+        void, FlyingScoreEffect* self, CutScoreBuffer* cutScoreBuffer) {
     
-    HandleSwingFinish(self, counter);
+    HandleSwingFinish(self, cutScoreBuffer);
+    getLogger().info("HandleBufferFinish");
     
     if(globalConfig.GetActive()) {
-        auto itr = swingRatingMap.find(counter);
+        if(cutScoreBuffer == nullptr) {
+            getLogger().info("CutScoreBuffer is null");
+            return;
+        }
+
+        auto itr = swingRatingMap.find(reinterpret_cast<IReadonlyCutScoreBuffer*>(cutScoreBuffer));
         if(itr == swingRatingMap.end()) {
             LOG_ERROR("Counter was not found in swingRatingMap!");
             return;
@@ -127,9 +148,11 @@ MAKE_HOOK_MATCH(HandleSwingFinish, &BeatmapObjectExecutionRatingsRecorder_CutSco
         auto& noteCutInfo = itr->second.first;
         auto& flyingScoreEffect = itr->second.second;
 
-        Judge(counter, flyingScoreEffect, noteCutInfo);
+        Judge(cutScoreBuffer, flyingScoreEffect, noteCutInfo);
+        getLogger().info("Judging BufferFinish");
 
         swingRatingMap.erase(itr);
+        getLogger().info("Removed buffer from map");
 
         if(flyingScoreEffect == currentEffect)
             currentEffect = nullptr;
@@ -141,6 +164,7 @@ MAKE_HOOK_MATCH(FlyingScoreEffectManualUpdate, &FlyingScoreEffect::ManualUpdate,
     
     FlyingScoreEffectManualUpdate(self, t);
 
+    //getLogger().info("Manual Update FlyingScoreEffect");
     if(globalConfig.GetActive()) {
         self->color.a = self->fadeAnimationCurve->Evaluate(t);
         self->text->set_color(self->color);
@@ -150,8 +174,8 @@ MAKE_HOOK_MATCH(FlyingScoreEffectManualUpdate, &FlyingScoreEffect::ManualUpdate,
 MAKE_HOOK_MATCH(FlyingScoreEffectDespawn, &FlyingScoreEffect::Pool::OnDespawned, void, FlyingScoreEffect::Pool* self, FlyingScoreEffect* item) {
 
     FlyingScoreEffectDespawn(self, item);
-
-    item->get_gameObject()->SetActive(false);
+    getLogger().info("Deactivating FlyingScoreEffect");
+    if(item->get_gameObject() != nullptr) item->get_gameObject()->SetActive(false);
 }
 
 extern "C" void setup(ModInfo& info) {

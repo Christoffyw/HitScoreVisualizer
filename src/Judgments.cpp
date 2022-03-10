@@ -1,11 +1,15 @@
 #include "Main.hpp"
 
 #include "GlobalNamespace/ScoreModel.hpp"
+#include "GlobalNamespace/IReadonlyCutScoreBuffer.hpp"
+#include "GlobalNamespace/CutScoreBuffer.hpp"
+#include "UnityEngine/Mathf.hpp"
 
 #include "TMPro/TextMeshPro.hpp"
 
 #include <sstream>
 #include <iomanip>
+#include <math.h>
 
 using namespace GlobalNamespace;
 using namespace HSV;
@@ -85,6 +89,15 @@ UnityEngine::Color GetJudgementColor(Judgement& judgement, int score) {
     );
 }
 
+void RawScoreWithoutMultiplier(CutScoreBuffer* cutScoreBuffer, float cutDistanceToCenter, ByRef<int> beforeCutRawScore, ByRef<int> afterCutRawScore, ByRef<int> cutDistanceRawScore)
+{
+    beforeCutRawScore = ((cutScoreBuffer != nullptr) ? round(70 * cutScoreBuffer->get_beforeCutSwingRating()) : 0);
+    afterCutRawScore = ((cutScoreBuffer != nullptr) ? round(30 * cutScoreBuffer->get_afterCutSwingRating()) : 0);
+    getLogger().info("Raw Score stuff start");
+    float num = 1 - UnityEngine::Mathf::Clamp01(cutDistanceToCenter / 0.3f);
+    cutDistanceRawScore = round(15 * num);
+}
+
 void UpdateScoreEffect(FlyingScoreEffect* flyingScoreEffect, int total, int before, int after, int accuracy, float timeDependence) {
     auto& judgement = GetBestJudgement(globalConfig.CurrentConfig->Judgements, total);
 
@@ -96,10 +109,19 @@ void UpdateScoreEffect(FlyingScoreEffect* flyingScoreEffect, int total, int befo
     flyingScoreEffect->color = color;
 }
 
-void Judge(ISaberSwingRatingCounter* swingCounter, FlyingScoreEffect* flyingScoreEffect, NoteCutInfo noteCutInfo) {
-
+void Judge(CutScoreBuffer* cutScoreBuffer, FlyingScoreEffect* flyingScoreEffect, NoteCutInfo noteCutInfo) {
+    if(cutScoreBuffer == nullptr) {
+        getLogger().info("CutScoreBuffer is null");
+        return;
+    }
+    if(flyingScoreEffect == nullptr) {
+        getLogger().info("FlyingScoreEffect is null");
+        return;
+    }
     int before, after, accuracy;
-    ScoreModel::RawScoreWithoutMultiplier(swingCounter, noteCutInfo.cutDistanceToCenter, byref(before), byref(after), byref(accuracy));
+    getLogger().info("Raw Score stuff start");
+    RawScoreWithoutMultiplier(cutScoreBuffer, noteCutInfo.cutDistanceToCenter, byref(before), byref(after), byref(accuracy));
+    getLogger().info("Raw Score... before:%i, after:%i, accuracy:%i", before, after, accuracy);
     int total = before + after + accuracy;
     float timeDependence = std::abs(noteCutInfo.cutNormal.z);
 

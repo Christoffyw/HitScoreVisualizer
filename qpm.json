@@ -22,7 +22,7 @@
     },
     {
       "id": "codegen",
-      "versionRange": "^0.20.0",
+      "versionRange": "^0.21.0",
       "additionalData": {}
     },
     {

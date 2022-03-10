@@ -11,6 +11,7 @@
 
 #include "GlobalNamespace/FlyingScoreEffect.hpp"
 #include "GlobalNamespace/ISaberSwingRatingCounter.hpp"
+#include "GlobalNamespace/IReadonlyCutScoreBuffer.hpp"
 #include "GlobalNamespace/NoteCutInfo.hpp"
 
 #include "HMUI/ViewController.hpp"
@@ -26,4 +27,4 @@ std::string ConfigsPath();
 extern HSV::GlobalConfig globalConfig;
 
 bool LoadCurrentConfig();
-void Judge(GlobalNamespace::ISaberSwingRatingCounter* swingCounter, GlobalNamespace::FlyingScoreEffect* flyingScoreEffect, GlobalNamespace::NoteCutInfo noteCutInfo);
+void Judge(GlobalNamespace::CutScoreBuffer* cutScoreBuffer, GlobalNamespace::FlyingScoreEffect* flyingScoreEffect, GlobalNamespace::NoteCutInfo noteCutInfo);
