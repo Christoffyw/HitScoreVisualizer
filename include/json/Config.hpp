@@ -21,22 +21,6 @@ DECLARE_JSON_CLASS(HSV, Judgement,
     UnityEngine::Color Color;
 )
 
-DECLARE_JSON_CLASS(HSV, ChainHeadJudgement,
-    int Threshold;
-    std::string UnprocessedText;
-    std::vector<float> UnprocessedColor;
-    std::optional<bool> Fade;
-    TokenizedText Text;
-    UnityEngine::Color Color;
-)
-
-DECLARE_JSON_CLASS(HSV, ChainLink,
-    std::string UnprocessedText;
-    std::vector<float> UnprocessedColor;
-    TokenizedText Text;
-    UnityEngine::Color Color;
-)
-
 DECLARE_JSON_CLASS(HSV, Segment,
     int Threshold;
     std::string Text;
@@ -50,12 +34,12 @@ DECLARE_JSON_CLASS(HSV, FloatSegment,
 DECLARE_JSON_CLASS(HSV, Config,
     bool IsDefault;
     std::vector<Judgement> Judgements;
+    std::vector<Judgement> ChainHeadJudgements;
+    std::optional<Judgement> ChainLinkDisplay;
     std::vector<Segment> BeforeCutAngleSegments;
     std::vector<Segment> AccuracySegments;
     std::vector<Segment> AfterCutAngleSegments;
     std::vector<FloatSegment> TimeDependenceSegments;
-    std::vector<ChainHeadJudgement> ChainHeadJudgements;
-    ChainLink ChainLinkDisplay;
     std::optional<float> FixedPosX;
     std::optional<float> FixedPosY;
     std::optional<float> FixedPosZ;

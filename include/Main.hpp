@@ -7,8 +7,6 @@
 #include "beatsaber-hook/shared/utils/hooking.hpp"
 #include "beatsaber-hook/shared/config/config-utils.hpp"
 
-#define USE_CODEGEN_FIELDS
-
 #include "GlobalNamespace/FlyingScoreEffect.hpp"
 #include "GlobalNamespace/ISaberSwingRatingCounter.hpp"
 #include "GlobalNamespace/IReadonlyCutScoreBuffer.hpp"
