@@ -72,7 +72,6 @@ std::unordered_map<IReadonlyCutScoreBuffer*, std::pair<NoteCutInfo, FlyingScoreE
 MAKE_HOOK_MATCH(InitFlyingScoreEffect, &FlyingScoreEffect::InitAndPresent,
         void, FlyingScoreEffect* self, IReadonlyCutScoreBuffer* cutScoreBuffer, float duration, UnityEngine::Vector3 targetPos, UnityEngine::Color color) {
 
-    getLogger().info("InitAndPresent hitscore");
     if(globalConfig.GetActive()) {
         if(globalConfig.CurrentConfig->PosOffset) {
             targetPos = targetPos + globalConfig.CurrentConfig->PosOffset.value();
@@ -86,7 +85,6 @@ MAKE_HOOK_MATCH(InitFlyingScoreEffect, &FlyingScoreEffect::InitAndPresent,
 
     InitFlyingScoreEffect(self, cutScoreBuffer, duration, targetPos, color);
 
-    getLogger().info("Doing stuff with thing");
     if(globalConfig.GetActive()) {
         if(cutScoreBuffer == nullptr) {
             getLogger().info("CutScoreBuffer is null");
@@ -99,23 +97,23 @@ MAKE_HOOK_MATCH(InitFlyingScoreEffect, &FlyingScoreEffect::InitAndPresent,
         self->text->set_enableWordWrapping(false);
         self->text->set_overflowMode(TMPro::TextOverflowModes::Overflow);
 
-        getLogger().info("Judging InitAndPresent");
+        //getLogger().info("Judging InitAndPresent");
         Judge(reinterpret_cast<CutScoreBuffer *>(self->cutScoreBuffer), self, cutScoreBuffer->get_noteCutInfo());
     }
 }
 
-MAKE_HOOK_MATCH(HandleSwingChange, &FlyingScoreEffect::HandleCutScoreBufferDidChange,
-        void, FlyingScoreEffect* self, CutScoreBuffer* cutScoreBuffer) {
+MAKE_HOOK_MATCH(HandleSwingChange, &CutScoreBuffer::HandleSaberSwingRatingCounterDidChange,
+        void, CutScoreBuffer* self, ISaberSwingRatingCounter* swingRatingCounter, float rating) {
 
-    HandleSwingChange(self, cutScoreBuffer);
-    getLogger().info("HandleBufferChange");
+    HandleSwingChange(self, swingRatingCounter, rating);
+    //getLogger().info("HandleBufferChange");
 
     if(globalConfig.GetActive()) {
-        if(cutScoreBuffer == nullptr) {
-            getLogger().info("CutScoreBuffer is null");
+        if(swingRatingCounter == nullptr) {
+            getLogger().info("ISaberSwingRatingCounter is null");
             return;
         }
-        auto itr = swingRatingMap.find(reinterpret_cast<IReadonlyCutScoreBuffer*>(cutScoreBuffer));
+        auto itr = swingRatingMap.find(reinterpret_cast<IReadonlyCutScoreBuffer*>(self));
         if(itr == swingRatingMap.end()) {
             LOG_ERROR("Counter was not found in swingRatingMap!");
             return;
@@ -123,24 +121,24 @@ MAKE_HOOK_MATCH(HandleSwingChange, &FlyingScoreEffect::HandleCutScoreBufferDidCh
         auto& noteCutInfo = itr->second.first;
         auto& flyingScoreEffect = itr->second.second;
 
-        Judge(cutScoreBuffer, flyingScoreEffect, noteCutInfo);
-        getLogger().info("Judging BufferChange");
+        Judge(self, flyingScoreEffect, noteCutInfo);
+        //getLogger().info("Judging BufferChange");
     }
 }
 
-MAKE_HOOK_MATCH(HandleSwingFinish, &FlyingScoreEffect::HandleCutScoreBufferDidFinish,
-        void, FlyingScoreEffect* self, CutScoreBuffer* cutScoreBuffer) {
+MAKE_HOOK_MATCH(HandleSwingFinish, &CutScoreBuffer::HandleSaberSwingRatingCounterDidFinish,
+        void, CutScoreBuffer* self, ISaberSwingRatingCounter* swingRatingCounter) {
     
-    HandleSwingFinish(self, cutScoreBuffer);
-    getLogger().info("HandleBufferFinish");
+    HandleSwingFinish(self, swingRatingCounter);
+    //getLogger().info("HandleBufferFinish");
     
     if(globalConfig.GetActive()) {
-        if(cutScoreBuffer == nullptr) {
-            getLogger().info("CutScoreBuffer is null");
+        if(swingRatingCounter == nullptr) {
+            getLogger().info("ISaberSwingRatingCounter is null");
             return;
         }
 
-        auto itr = swingRatingMap.find(reinterpret_cast<IReadonlyCutScoreBuffer*>(cutScoreBuffer));
+        auto itr = swingRatingMap.find(reinterpret_cast<IReadonlyCutScoreBuffer*>(self));
         if(itr == swingRatingMap.end()) {
             LOG_ERROR("Counter was not found in swingRatingMap!");
             return;
@@ -148,11 +146,11 @@ MAKE_HOOK_MATCH(HandleSwingFinish, &FlyingScoreEffect::HandleCutScoreBufferDidFi
         auto& noteCutInfo = itr->second.first;
         auto& flyingScoreEffect = itr->second.second;
 
-        Judge(cutScoreBuffer, flyingScoreEffect, noteCutInfo);
-        getLogger().info("Judging BufferFinish");
+        Judge(self, flyingScoreEffect, noteCutInfo);
+        //getLogger().info("Judging BufferFinish");
 
         swingRatingMap.erase(itr);
-        getLogger().info("Removed buffer from map");
+        //getLogger().info("Removed buffer from map");
 
         if(flyingScoreEffect == currentEffect)
             currentEffect = nullptr;
@@ -174,7 +172,7 @@ MAKE_HOOK_MATCH(FlyingScoreEffectManualUpdate, &FlyingScoreEffect::ManualUpdate,
 MAKE_HOOK_MATCH(FlyingScoreEffectDespawn, &FlyingScoreEffect::Pool::OnDespawned, void, FlyingScoreEffect::Pool* self, FlyingScoreEffect* item) {
 
     FlyingScoreEffectDespawn(self, item);
-    getLogger().info("Deactivating FlyingScoreEffect");
+    //getLogger().info("Deactivating FlyingScoreEffect");
     if(item->get_gameObject() != nullptr) item->get_gameObject()->SetActive(false);
 }
 
