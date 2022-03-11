@@ -2,6 +2,19 @@
 
 #include "beatsaber-hook/shared/config/rapidjson-utils.hpp"
 
+class JSONException : public std::exception {
+    private:
+        const char* error;
+        std::string message;
+    public:
+        explicit JSONException(const std::string& message) : message(message) {
+            error = message.c_str();
+        }
+        const char* what() const noexcept override {
+            return error;
+        }
+};
+
 class JSONClass {
     public:
         virtual void Deserialize(const rapidjson::Value& jsonValue) = 0;
@@ -24,8 +37,8 @@ void namespaze::name::Deserialize(const rapidjson::Value& jsonValue) { \
 }
 
 #define DESERIALIZE_VALUE(name, jsonName, type) \
-if (!jsonValue.HasMember(#jsonName)) throw std::runtime_error(#jsonName " not found"); \
-if (!jsonValue[#jsonName].Is##type()) throw std::runtime_error(#jsonName ", type expected was: " #type); \
+if (!jsonValue.HasMember(#jsonName)) throw JSONException(#jsonName " not found"); \
+if (!jsonValue[#jsonName].Is##type()) throw JSONException(#jsonName ", type expected was: " #type); \
 name = jsonValue[#jsonName].Get##type();
 
 #define DESERIALIZE_VALUE_OPTIONAL(name, jsonName, type) \
@@ -39,8 +52,8 @@ if(jsonValue.HasMember(#jsonName) && jsonValue[#jsonName].Is##type()) { \
 } else name = def;
 
 #define DESERIALIZE_CLASS(name, jsonName) \
-if (!jsonValue.HasMember(#jsonName)) throw std::runtime_error(#jsonName " not found"); \
-if (!jsonValue[#jsonName].IsObject()) throw std::runtime_error(#jsonName ", type expected was: JsonObject"); \
+if (!jsonValue.HasMember(#jsonName)) throw JSONException(#jsonName " not found"); \
+if (!jsonValue[#jsonName].IsObject()) throw JSONException(#jsonName ", type expected was: JsonObject"); \
 name.Deserialize(jsonValue[#jsonName]);
 
 #define DESERIALIZE_CLASS_OPTIONAL(name, jsonName) \
@@ -56,7 +69,7 @@ if(jsonValue.HasMember(#jsonName) && jsonValue[#jsonName].IsObject()) { \
 
 // seems to assume vector is of another json class
 #define DESERIALIZE_VECTOR(name, jsonName, type) \
-if (!jsonValue.HasMember(#jsonName)) throw std::runtime_error(#jsonName " not found"); \
+if (!jsonValue.HasMember(#jsonName)) throw JSONException(#jsonName " not found"); \
 name.clear(); \
 auto& jsonName = jsonValue[#jsonName]; \
 if(jsonName.IsArray()) { \
@@ -65,7 +78,7 @@ if(jsonName.IsArray()) { \
         value.Deserialize(*it); \
         name.push_back(value); \
     } \
-} else throw std::runtime_error(#jsonName ", type expected was: JsonArray");
+} else throw JSONException(#jsonName ", type expected was: JsonArray");
 
 #define DESERIALIZE_VECTOR_OPTIONAL(name, jsonName, type) \
 if(jsonValue.HasMember(#jsonName) && jsonValue[#jsonName].IsArray()) { \
@@ -91,14 +104,14 @@ if(jsonValue.HasMember(#jsonName) && jsonValue[#jsonName].IsArray()) { \
 } else name = def;
 
 #define DESERIALIZE_VECTOR_BASIC(name, jsonName, type) \
-if (!jsonValue.HasMember(#jsonName)) throw std::runtime_error(#jsonName " not found"); \
+if (!jsonValue.HasMember(#jsonName)) throw JSONException(#jsonName " not found"); \
 name.clear(); \
 auto& jsonName = jsonValue[#jsonName]; \
 if(jsonName.IsArray()) { \
     for (auto it = jsonName.Begin(); it != jsonName.End(); ++it) { \
         name.push_back(it->Get##type()); \
     } \
-} else throw std::runtime_error(#jsonName ", type expected was: JsonArray");
+} else throw JSONException(#jsonName ", type expected was: JsonArray");
 
 #define DESERIALIZE_VECTOR_BASIC_OPTIONAL(name, jsonName, type) \
 if(jsonValue.HasMember(#jsonName) && jsonValue[#jsonName].IsArray()) { \
@@ -172,18 +185,17 @@ if(name) { \
 }
 
 // functions, will be included with class definitions
-static bool ReadFromFile(std::string_view path, JSONClass& toDeserialize) {
+static void ReadFromFile(std::string_view path, JSONClass& toDeserialize) {
     if(!fileexists(path))
-        return false;
+        throw JSONException("file not found");
     auto json = readfile(path);
 
     rapidjson::Document document;
     document.Parse(json);
     if(document.HasParseError() || !document.IsObject())
-        return false;
+        throw JSONException("file could not be parsed as json");
     
     toDeserialize.Deserialize(document.GetObject());
-    return true;
 }
 
 static bool WriteToFile(std::string_view path, JSONClass& toSerialize) {

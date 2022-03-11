@@ -16,7 +16,7 @@ DESERIALIZE_METHOD(HSV, Judgement,
     DESERIALIZE_VALUE(UnprocessedText, text, String)
     DESERIALIZE_VECTOR_BASIC(UnprocessedColor, color, Float)
     if(UnprocessedColor.size() != 4)
-        throw std::runtime_error("color was incorrect length!");
+        throw JSONException("color was incorrect length!");
     DESERIALIZE_VALUE_OPTIONAL(Fade, fade, Bool)
     Text = TokenizedText(UnprocessedText);
     Color = UnityEngine::Color(UnprocessedColor[0], UnprocessedColor[1], UnprocessedColor[2], UnprocessedColor[3]);
@@ -42,7 +42,7 @@ DESERIALIZE_METHOD(HSV, Config,
     DESERIALIZE_VALUE_DEFAULT(IsDefault, isDefault, Bool, true)
     DESERIALIZE_VECTOR(Judgements, judgments, Judgement)
     if(Judgements.size() < 1)
-        throw std::runtime_error("no judgements found in config!");
+        throw JSONException("no judgements found in config!");
     DESERIALIZE_VECTOR_DEFAULT(BeforeCutAngleSegments, beforeCutAngleJudgments, Segment, {})
     DESERIALIZE_VECTOR_DEFAULT(AccuracySegments, accuracyJudgments, Segment, {})
     DESERIALIZE_VECTOR_DEFAULT(AfterCutAngleSegments, afterCutAngleJudgments, Segment, {})
