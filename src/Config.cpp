@@ -24,6 +24,30 @@ DESERIALIZE_METHOD(HSV, Judgement,
 
 SERIALIZE_METHOD(HSV, Judgement)
 
+DESERIALIZE_METHOD(HSV, ChainHeadJudgement,
+    DESERIALIZE_VALUE_DEFAULT(Threshold, threshold, Int, 0)
+    DESERIALIZE_VALUE(UnprocessedText, text, String)
+    DESERIALIZE_VECTOR_BASIC(UnprocessedColor, color, Float)
+    if(UnprocessedColor.size() != 4)
+       throw std::runtime_error("color was incorrect length!");
+    DESERIALIZE_VALUE_OPTIONAL(Fade, fade, Bool)
+    Text = TokenizedText(UnprocessedText);
+    Color = UnityEngine::Color(UnprocessedColor[0], UnprocessedColor[1], UnprocessedColor[2], UnprocessedColor[3]);
+)
+
+SERIALIZE_METHOD(HSV, ChainHeadJudgement)
+
+DESERIALIZE_METHOD(HSV, ChainLink,
+    DESERIALIZE_VALUE(UnprocessedText, text, String)
+    DESERIALIZE_VECTOR_BASIC(UnprocessedColor, color, Float)
+    if(UnprocessedColor.size() != 4)
+        throw std::runtime_error("color was incorrect length!");
+    Text = TokenizedText(UnprocessedText);
+    Color = UnityEngine::Color(UnprocessedColor[0], UnprocessedColor[1], UnprocessedColor[2], UnprocessedColor[3]);
+)
+
+SERIALIZE_METHOD(HSV, ChainLink)
+
 DESERIALIZE_METHOD(HSV, Segment,
     DESERIALIZE_VALUE_DEFAULT(Threshold, threshold, Int, 0)
     DESERIALIZE_VALUE(Text, text, String)
@@ -47,6 +71,8 @@ DESERIALIZE_METHOD(HSV, Config,
     DESERIALIZE_VECTOR_DEFAULT(AccuracySegments, accuracyJudgments, Segment, {})
     DESERIALIZE_VECTOR_DEFAULT(AfterCutAngleSegments, afterCutAngleJudgments, Segment, {})
     DESERIALIZE_VECTOR_DEFAULT(TimeDependenceSegments, timeDependencyJudgments, FloatSegment, {})
+    DESERIALIZE_VECTOR_DEFAULT(ChainHeadJudgements, chainHeadJudgments, ChainHeadJudgement, {})
+    DESERIALIZE_CLASS_DEFAULT(ChainLinkDisplay, chainLinkDisplay, {})
     DESERIALIZE_VALUE_DEFAULT(FixedPosX, fixedPosX, Float, 0)
     DESERIALIZE_VALUE_DEFAULT(FixedPosY, fixedPosY, Float, 0)
     DESERIALIZE_VALUE_DEFAULT(FixedPosZ, fixedPosZ, Float, 0)
