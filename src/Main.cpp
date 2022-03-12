@@ -51,8 +51,8 @@ bool LoadCurrentConfig() {
     try {
         ReadFromFile(globalConfig.SelectedConfig, config);
         globalConfig.CurrentConfig = config;
-    } catch(std::runtime_error const& e) {
-        LOG_ERROR("Error loading config: %s", e.what());
+    } catch(const std::exception& err) {
+        LOG_ERROR("Error loading config: %s", err.what());
         if(config.IsDefault) {
             writefile(ConfigsPath() + globalConfig.SelectedConfig, defaultConfigText);
             return LoadCurrentConfig();
@@ -165,7 +165,9 @@ MAKE_HOOK_MATCH(FlyingScoreEffectManualUpdate, &FlyingScoreEffect::ManualUpdate,
 MAKE_HOOK_MATCH(FlyingScoreEffectDespawn, &FlyingScoreEffect::Pool::OnDespawned, void, FlyingScoreEffect::Pool* self, FlyingScoreEffect* item) {
 
     FlyingScoreEffectDespawn(self, item);
-    if(item->get_gameObject() != nullptr) item->get_gameObject()->SetActive(false);
+    
+    if(item->get_gameObject())
+        item->get_gameObject()->SetActive(false);
 }
 
 extern "C" void setup(ModInfo& info) {
@@ -181,10 +183,17 @@ extern "C" void setup(ModInfo& info) {
             WriteToFile(GlobalConfigPath(), globalConfig);
         else
             ReadFromFile(GlobalConfigPath(), globalConfig);
-    } catch(std::runtime_error const& e) {
-        LOG_ERROR("Error loading config: %s", e.what());
+    } catch(const std::exception& err) {
+        LOG_ERROR("Error loading global config: %s", err.what());
     }
-    LoadCurrentConfig();
+    // load current config, or select default
+    if(!LoadCurrentConfig()) {
+        LOG_ERROR("Failed to load selected config! Loading default instead");
+        writefile(ConfigsPath() + defaultConfigName, defaultConfigText);
+        globalConfig.SelectedConfig = ConfigsPath() + defaultConfigName;
+        WriteToFile(GlobalConfigPath(), globalConfig);
+        LoadCurrentConfig();
+    }
 	
     LOG_INFO("Completed setup!");
 }

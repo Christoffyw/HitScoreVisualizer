@@ -30,10 +30,18 @@ void RefreshConfigList() {
     fullConfigPaths.clear();
     int selectedIdx = -1;
 
+    Config config;
     for(auto& entry : std::filesystem::recursive_directory_iterator(ConfigsPath())) {
         if (entry.path().extension() == ".json") {
-            data.emplace_back(entry.path().stem().string());
             std::string fullPath = entry.path().string();
+            // test loading the config
+            try {
+                ReadFromFile(fullPath, config);
+            } catch(const std::exception& err) {
+                LOG_ERROR("Could not load config file %s", fullPath.c_str());
+                continue;
+            }
+            data.emplace_back(entry.path().stem().string());
             fullConfigPaths.emplace_back(fullPath);
             if(globalConfig.SelectedConfig == fullPath)
                 selectedIdx = data.size() - 1;
