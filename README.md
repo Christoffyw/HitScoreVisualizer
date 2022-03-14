@@ -13,6 +13,8 @@ Having placed your config files in the folder doesn't mean you're ready to go ye
 
 ## How-To Config? (aka config explained)
 
+Update 1.20 has added new notes and has created changes for the config, old configs will work however arcs and chains may be inaccurate
+
 When first running the game, it will create a default config which can be found at `/sdcard/ModData/com.beatgames.beatsaber/Mods/HitScoreVisualizer/HitScoreVisualizerConfig (default).json`.<br>
 You can use that file as a starting point in case you want to customize it. Just make sure to set `isDefaultConfig` to `false`.
 
@@ -29,7 +31,8 @@ You can use that file as a starting point in case you want to customize it. Just
 | accuracyJudgments | The list that can be used to customize the Judgments for the accuracy of the cut. How close was the cut to the center of the block? (score is from 0 - 15).<br>Format token: %C<br> | Uses JudgmentSegments objects.<br>More info below. |
 | afterCutAngleJudgments | The list that can be used to customize the Judgments for the part of the swing after cutting the block (score is from 0 - 30).<br>Format token: %A<br> | Uses JudgmentSegments.<br>More info below. |
 | timeDependencyJudgments | The list that can be used to customize the Judgments for the time dependence (value is from 0 - 1).<br>Format token: %T<br> | Uses TimeDependenceJudgmentSegments.<br>More info below. |
-
+| chainHeadJudgments | The list that can be used to customize the Judgments for the new chain block heads. | Uses Judgment objects. More info below.
+| chainLinkDisplay | The judgment that will display when hitting the links of the chain block. `threshold` and `fade` don't work here because the links are a static score. | Uses Judgment objects. More info below.
 ### Important info
 
 - The `text` property of Judgment, JudgmentSegment, and TimeDependenceJudgmentSegment all have support for [TextMeshPro formatting!](http://digitalnativestudios.com/textmeshpro/docs/rich-text/).
