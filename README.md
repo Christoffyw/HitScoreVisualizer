@@ -13,7 +13,7 @@ Having placed your config files in the folder doesn't mean you're ready to go ye
 
 ## How-To Config? (aka config explained)
 
-Update 1.20 has added new notes and has created changes for the config, old configs will work however arcs and chains may be inaccurate
+**UPDATE 1.20 has added new notes and has created changes for the config, old configs will work however arcs and chains may be inaccurate**
 
 When first running the game, it will create a default config which can be found at `/sdcard/ModData/com.beatgames.beatsaber/Mods/HitScoreVisualizer/HitScoreVisualizerConfig (default).json`.<br>
 You can use that file as a starting point in case you want to customize it. Just make sure to set `isDefaultConfig` to `false`.
