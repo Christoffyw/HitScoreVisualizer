@@ -25,14 +25,14 @@ Param(
 )
 
 if ($help -eq $true) {
-    echo "`"Copy`" - Builds and copies your mod to your quest, and also starts Beat Saber with optional logging"
-    echo "`n-- Arguments --`n"
+    Write-Output "`"Copy`" - Builds and copies your mod to your quest, and also starts Beat Saber with optional logging"
+    Write-Output "`n-- Arguments --`n"
 
-    echo "-Clean `t`t Performs a clean build (equvilant to running `"Build -clean`")"
-    echo "-UseDebug `t Copied the debug version of the mod to your quest"
-    echo "-Log `t`t Logs Beat Saber using the `"Start-Logging`" command"
+    Write-Output "-Clean `t`t Performs a clean build (equvilant to running `"build -clean`")"
+    Write-Output "-UseDebug `t Copies the debug version of the mod to your quest"
+    Write-Output "-Log `t`t Logs Beat Saber using the `"Start-Logging`" command"
 
-    echo "`n-- Logging Arguments --`n"
+    Write-Output "`n-- Logging Arguments --`n"
 
     & $PSScriptRoot/start-logging.ps1 -help -excludeHeader
 
@@ -42,17 +42,20 @@ if ($help -eq $true) {
 & $PSScriptRoot/build.ps1 -clean:$clean
 
 if ($LASTEXITCODE -ne 0) {
-    echo "Failed to build, exiting..."
+    Write-Output "Failed to build, exiting..."
     exit $LASTEXITCODE
 }
 
-if ($useDebug -eq $true) {
-    $fileName = Get-ChildItem lib*.so -Path "build/debug" -Name
-} else {
-    $fileName = Get-ChildItem lib*.so -Path "build/" -Name
-}
+$modJson = Get-Content "./mod.json" -Raw | ConvertFrom-Json
+$modFiles = $modJson.modFiles
 
-& adb push build/$fileName /sdcard/Android/data/com.beatgames.beatsaber/files/mods/$fileName
+foreach ($fileName in $modFiles) {
+    if ($useDebug -eq $true) {
+        & adb push build/debug/$fileName /sdcard/Android/data/com.beatgames.beatsaber/files/mods/$fileName
+    } else {
+        & adb push build/$fileName /sdcard/Android/data/com.beatgames.beatsaber/files/mods/$fileName
+    }
+}
 
 & $PSScriptRoot/restart-game.ps1
 
