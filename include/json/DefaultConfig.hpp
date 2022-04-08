@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 static const std::string defaultConfigName = "HitScoreVisualizerConfig (default).json";
 
 static const std::string defaultConfigText = "{"
@@ -112,7 +114,7 @@ static const std::string defaultConfigText = "{"
 "         1,"
 "         1"
 "       ],"
-"       \"fade\": true"
+"       \"fade\": false"
 "    },"
 "    {"
 "      \"threshold\": 71,"
@@ -123,7 +125,7 @@ static const std::string defaultConfigText = "{"
 "         0,"
 "         1"
 "       ],"
-"       \"fade\": true"
+"       \"fade\": false"
 "    },"
 "    {"
 "      \"threshold\": 60,"
@@ -134,7 +136,7 @@ static const std::string defaultConfigText = "{"
 "         0,"
 "         1"
 "       ],"
-"       \"fade\": true"
+"       \"fade\": false"
 "    },"
 "    {"
 "      \"threshold\": 50,"

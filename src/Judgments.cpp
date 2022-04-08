@@ -119,7 +119,7 @@ void UpdateScoreEffect(FlyingScoreEffect* flyingScoreEffect, int total, int befo
     flyingScoreEffect->color = color;
 }
 
-void Judge(CutScoreBuffer* cutScoreBuffer, FlyingScoreEffect* flyingScoreEffect, NoteCutInfo noteCutInfo) {
+void Judge(CutScoreBuffer* cutScoreBuffer, FlyingScoreEffect* flyingScoreEffect, NoteCutInfo& noteCutInfo) {
     if(!cutScoreBuffer) {
         LOG_INFO("CutScoreBuffer is null");
         return;

@@ -50,6 +50,8 @@ DECLARE_JSON_CLASS(HSV, Config,
     std::optional<UnityEngine::Vector3> PosOffset;
     int TimeDependenceDecimalPrecision;
     int TimeDependenceDecimalOffset;
+    bool HasChainHead;
+    bool HasChainLink;
 )
 
 DECLARE_JSON_CLASS(HSV, GlobalConfig,

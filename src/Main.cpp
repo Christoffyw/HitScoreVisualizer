@@ -67,7 +67,7 @@ GlobalConfig globalConfig{};
 // used for fixed position
 FlyingScoreEffect* currentEffect = nullptr;
 // used for updating ratings
-std::unordered_map<IReadonlyCutScoreBuffer*, std::pair<NoteCutInfo, FlyingScoreEffect*>> swingRatingMap = {};
+std::unordered_map<IReadonlyCutScoreBuffer*, FlyingScoreEffect*> swingRatingMap = {};
 
 MAKE_HOOK_MATCH(InitFlyingScoreEffect, &FlyingScoreEffect::InitAndPresent,
         void, FlyingScoreEffect* self, IReadonlyCutScoreBuffer* cutScoreBuffer, float duration, UnityEngine::Vector3 targetPos, UnityEngine::Color color) {
@@ -79,6 +79,8 @@ MAKE_HOOK_MATCH(InitFlyingScoreEffect, &FlyingScoreEffect::InitAndPresent,
         else if(globalConfig.CurrentConfig->FixedPos) {
             targetPos = globalConfig.CurrentConfig->FixedPos.value();
             self->get_transform()->set_position(targetPos);
+            if(currentEffect)
+                currentEffect->get_gameObject()->SetActive(false);
             currentEffect = self;
         }
     }
@@ -87,17 +89,25 @@ MAKE_HOOK_MATCH(InitFlyingScoreEffect, &FlyingScoreEffect::InitAndPresent,
 
     if(globalConfig.GetActive()) {
         if(cutScoreBuffer == nullptr) {
-            LOG_INFO("CutScoreBuffer is null");
+            LOG_ERROR("CutScoreBuffer is null");
             return;
         }
-        self->maxCutDistanceScoreIndicator->set_enabled(false);
-        swingRatingMap.insert({self->cutScoreBuffer, {cutScoreBuffer->get_noteCutInfo(), self}});
+        auto noteCutInfo = cutScoreBuffer->get_noteCutInfo();
+        if(noteCutInfo.noteData->scoringType == NoteData::ScoringType::BurstSliderHead && !globalConfig.CurrentConfig->HasChainHead)
+            return;
+        if(noteCutInfo.noteData->scoringType == NoteData::ScoringType::BurstSliderElement && !globalConfig.CurrentConfig->HasChainLink)
+            return;
         
+        if(!cutScoreBuffer->get_isFinished()) {
+            swingRatingMap.insert({self->cutScoreBuffer, self});
+        }
+        
+        self->maxCutDistanceScoreIndicator->set_enabled(false);
         self->text->set_richText(true);
         self->text->set_enableWordWrapping(false);
         self->text->set_overflowMode(TMPro::TextOverflowModes::Overflow);
 
-        Judge(reinterpret_cast<CutScoreBuffer *>(self->cutScoreBuffer), self, cutScoreBuffer->get_noteCutInfo());
+        Judge((CutScoreBuffer*) cutScoreBuffer, self, noteCutInfo);
     }
 }
 
@@ -107,17 +117,18 @@ MAKE_HOOK_MATCH(HandleSwingChange, &CutScoreBuffer::HandleSaberSwingRatingCounte
     HandleSwingChange(self, swingRatingCounter, rating);
 
     if(globalConfig.GetActive()) {
-        if(swingRatingCounter == nullptr) {
-            LOG_INFO("ISaberSwingRatingCounter is null");
+        auto noteCutInfo = self->get_noteCutInfo();
+        if(noteCutInfo.noteData->scoringType == NoteData::ScoringType::BurstSliderHead && !globalConfig.CurrentConfig->HasChainHead)
             return;
-        }
-        auto itr = swingRatingMap.find(reinterpret_cast<IReadonlyCutScoreBuffer*>(self));
+        if(noteCutInfo.noteData->scoringType == NoteData::ScoringType::BurstSliderElement && !globalConfig.CurrentConfig->HasChainLink)
+            return;
+        
+        auto itr = swingRatingMap.find((IReadonlyCutScoreBuffer*) self);
         if(itr == swingRatingMap.end()) {
             LOG_ERROR("Counter was not found in swingRatingMap!");
             return;
         }
-        auto& noteCutInfo = itr->second.first;
-        auto& flyingScoreEffect = itr->second.second;
+        auto& flyingScoreEffect = itr->second;
 
         Judge(self, flyingScoreEffect, noteCutInfo);
     }
@@ -129,18 +140,18 @@ MAKE_HOOK_MATCH(HandleSwingFinish, &CutScoreBuffer::HandleSaberSwingRatingCounte
     HandleSwingFinish(self, swingRatingCounter);
     
     if(globalConfig.GetActive()) {
-        if(swingRatingCounter == nullptr) {
-            LOG_INFO("ISaberSwingRatingCounter is null");
+        auto noteCutInfo = self->get_noteCutInfo();
+        if(noteCutInfo.noteData->scoringType == NoteData::ScoringType::BurstSliderHead && !globalConfig.CurrentConfig->HasChainHead)
             return;
-        }
+        if(noteCutInfo.noteData->scoringType == NoteData::ScoringType::BurstSliderElement && !globalConfig.CurrentConfig->HasChainLink)
+            return;
 
-        auto itr = swingRatingMap.find(reinterpret_cast<IReadonlyCutScoreBuffer*>(self));
+        auto itr = swingRatingMap.find((IReadonlyCutScoreBuffer*) self);
         if(itr == swingRatingMap.end()) {
             LOG_ERROR("Counter was not found in swingRatingMap!");
             return;
         }
-        auto& noteCutInfo = itr->second.first;
-        auto& flyingScoreEffect = itr->second.second;
+        auto& flyingScoreEffect = itr->second;
 
         Judge(self, flyingScoreEffect, noteCutInfo);
 
@@ -160,14 +171,6 @@ MAKE_HOOK_MATCH(FlyingScoreEffectManualUpdate, &FlyingScoreEffect::ManualUpdate,
         self->color.a = self->fadeAnimationCurve->Evaluate(t);
         self->text->set_color(self->color);
     }
-}
-
-MAKE_HOOK_MATCH(FlyingScoreEffectDespawn, &FlyingScoreEffect::Pool::OnDespawned, void, FlyingScoreEffect::Pool* self, FlyingScoreEffect* item) {
-
-    FlyingScoreEffectDespawn(self, item);
-    
-    if(item->get_gameObject())
-        item->get_gameObject()->SetActive(false);
 }
 
 extern "C" void setup(ModInfo& info) {
@@ -209,6 +212,5 @@ extern "C" void load() {
     INSTALL_HOOK(getLogger(), HandleSwingChange);
     INSTALL_HOOK(getLogger(), HandleSwingFinish);
     INSTALL_HOOK(getLogger(), FlyingScoreEffectManualUpdate);
-    INSTALL_HOOK(getLogger(), FlyingScoreEffectDespawn);
     LOG_INFO("Installed all hooks!");
 }

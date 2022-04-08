@@ -44,9 +44,9 @@ DESERIALIZE_METHOD(HSV, Config,
     if(Judgements.size() < 1)
         throw JSONException("no judgements found in config!");
     DESERIALIZE_VECTOR_DEFAULT(ChainHeadJudgements, chainHeadJudgments, Judgement, {})
-    if(ChainHeadJudgements.size() < 1)
-        ChainHeadJudgements = Judgements;
+    HasChainHead = ChainHeadJudgements.size() > 0;
     DESERIALIZE_CLASS_OPTIONAL(ChainLinkDisplay, chainLinkDisplay)
+    HasChainLink = ChainLinkDisplay.has_value();
     DESERIALIZE_VECTOR_DEFAULT(BeforeCutAngleSegments, beforeCutAngleJudgments, Segment, {})
     DESERIALIZE_VECTOR_DEFAULT(AccuracySegments, accuracyJudgments, Segment, {})
     DESERIALIZE_VECTOR_DEFAULT(AfterCutAngleSegments, afterCutAngleJudgments, Segment, {})
