@@ -204,8 +204,8 @@ extern "C" void setup(ModInfo& info) {
 extern "C" void load() {
     il2cpp_functions::Init();
 
-    QuestUI::Register::RegisterModSettingsViewController(modInfo, "Hit Score Visualizer", DidActivate);
-    QuestUI::Register::RegisterMainMenuModSettingsViewController(modInfo, "Hit Score Visualizer", DidActivate);
+    QuestUI::Register::RegisterModSettingsViewController<SettingsViewController*>(modInfo, "Hit Score Visualizer");
+    QuestUI::Register::RegisterMainMenuModSettingsViewController<SettingsViewController*>(modInfo, "Hit Score Visualizer");
 
     LOG_INFO("Installing hooks...");
     INSTALL_HOOK(getLogger(), InitFlyingScoreEffect);

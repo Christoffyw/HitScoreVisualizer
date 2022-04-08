@@ -2,6 +2,8 @@
 
 #include "GlobalNamespace/SimpleTextTableCell.hpp"
 
+#include "UnityEngine/UI/Toggle.hpp"
+#include "TMPro/TextMeshProUGUI.hpp"
 #include "HMUI/ViewController.hpp"
 #include "HMUI/TableCell.hpp"
 #include "HMUI/TableView_IDataSource.hpp"
@@ -27,4 +29,18 @@ ___DECLARE_TYPE_WRAPPER_INHERITANCE(HSV, CustomList, Il2CppTypeEnum::IL2CPP_TYPE
     std::vector<std::string> data;
 )
 
-void DidActivate(HMUI::ViewController* self, bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling);
+DECLARE_CLASS_CODEGEN(HSV, SettingsViewController, HMUI::ViewController,
+
+    UnityEngine::UI::Toggle* enabledToggle;
+    TMPro::TextMeshProUGUI* selectedConfig;
+    HSV::CustomList* configList;
+    
+    static std::vector<std::string> fullConfigPaths;
+    static int selectedIdx;
+
+    void ConfigSelected(int idx);
+    void RefreshConfigList();
+    void RefreshUI();
+
+    DECLARE_OVERRIDE_METHOD(void, DidActivate, il2cpp_utils::il2cpp_type_check::MetadataGetter<&HMUI::ViewController::DidActivate>::get(), bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling);
+)

@@ -9,26 +9,26 @@
 #include <filesystem>
 
 DEFINE_TYPE(HSV, CustomList);
+DEFINE_TYPE(HSV, SettingsViewController);
 
 using namespace QuestUI;
 using namespace HSV;
 
-std::vector<std::string> fullConfigPaths;
-CustomList* configList = nullptr;
-TMPro::TextMeshProUGUI* selectedConfig;
+int SettingsViewController::selectedIdx = -1;
+std::vector<std::string> SettingsViewController::fullConfigPaths = {};
 
-void ConfigSelected(int idx) {
+void SettingsViewController::ConfigSelected(int idx) {
+    selectedIdx = idx;
     globalConfig.SelectedConfig = fullConfigPaths[idx];
     WriteToFile(GlobalConfigPath(), globalConfig);
     LoadCurrentConfig();
     selectedConfig->set_text("Current Config: " + configList->data[idx]);
 }
 
-void RefreshConfigList() {
+void SettingsViewController::RefreshConfigList() {
     auto& data = configList->data;
     data.clear();
     fullConfigPaths.clear();
-    int selectedIdx = -1;
 
     Config config;
     for(auto& entry : std::filesystem::recursive_directory_iterator(ConfigsPath())) {
@@ -54,11 +54,17 @@ void RefreshConfigList() {
     }
 }
 
-void DidActivate(HMUI::ViewController* self, bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling) {
+void SettingsViewController::RefreshUI() {
+    RefreshConfigList();
+    selectedConfig->set_text("Current Config: " + configList->data[selectedIdx]);
+    enabledToggle->set_isOn(globalConfig.ModEnabled);
+}
+
+void SettingsViewController::DidActivate(bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling) {
 
     if(firstActivation) {
-        self->get_gameObject()->AddComponent<HMUI::Touchable*>();
-        auto container = BeatSaberUI::CreateVerticalLayoutGroup(self->get_transform());
+        get_gameObject()->AddComponent<HMUI::Touchable*>();
+        auto container = BeatSaberUI::CreateVerticalLayoutGroup(get_transform());
 
         auto textLayout = BeatSaberUI::CreateVerticalLayoutGroup(container->get_transform());
         textLayout->set_childForceExpandHeight(false);
@@ -66,17 +72,18 @@ void DidActivate(HMUI::ViewController* self, bool firstActivation, bool addedToH
         textLayout->set_childControlHeight(true);
         textLayout->set_spacing(1.5);
 
-        BeatSaberUI::CreateText(textLayout->get_transform(), "HitScoreVisualizer settings.");
-        BeatSaberUI::AddHoverHint(BeatSaberUI::CreateToggle(textLayout->get_transform(), "Mod Enabled", globalConfig.ModEnabled, [](bool enabled){
+        BeatSaberUI::CreateText(textLayout, "HitScoreVisualizer settings.");
+        enabledToggle = BeatSaberUI::CreateToggle(textLayout->get_transform(), "Mod Enabled", globalConfig.ModEnabled, [](bool enabled){
             globalConfig.ModEnabled = enabled;
             WriteToFile(GlobalConfigPath(), globalConfig);
-        })->get_gameObject(), "Toggles whether the mod is active or not");
+        });
+        BeatSaberUI::AddHoverHint(enabledToggle, "Toggles whether the mod is active or not");
 
-        selectedConfig = BeatSaberUI::CreateText(textLayout->get_transform(), "Current Config: " + std::filesystem::path(globalConfig.SelectedConfig).stem().string(), false);
+        selectedConfig = BeatSaberUI::CreateText(textLayout, "Current Config: " + std::filesystem::path(globalConfig.SelectedConfig).stem().string(), false);
 
-        configList = BeatSaberUI::CreateScrollableCustomSourceList<CustomList*>(container, UnityEngine::Vector2(50, 60), ConfigSelected);
+        configList = BeatSaberUI::CreateScrollableCustomSourceList<CustomList*>(container, UnityEngine::Vector2(50, 60), [this](int idx) { ConfigSelected(idx); });
     }
-    RefreshConfigList();
+    RefreshUI();
 }
 
 void CustomList::ctor() {
