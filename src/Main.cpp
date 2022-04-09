@@ -54,7 +54,7 @@ bool LoadCurrentConfig() {
     } catch(const std::exception& err) {
         LOG_ERROR("Error loading config: %s", err.what());
         if(config.IsDefault) {
-            writefile(ConfigsPath() + globalConfig.SelectedConfig, defaultConfigText);
+            writefile(globalConfig.SelectedConfig, defaultConfigText);
             return LoadCurrentConfig();
         } else
             return false;

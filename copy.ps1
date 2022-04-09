@@ -18,7 +18,7 @@ Param(
     [String] $custom="",
 
     [Parameter(Mandatory=$false)]
-    [Switch] $file,
+    [String] $file="",
 
     [Parameter(Mandatory=$false)]
     [Switch] $help
@@ -59,4 +59,7 @@ foreach ($fileName in $modFiles) {
 
 & $PSScriptRoot/restart-game.ps1
 
-if ($log -eq $true) { & $PSScriptRoot/start-logging.ps1 -self:$self -all:$all -custom:$custom -file:$file }
+if ($log -eq $true) {
+    & adb logcat -c
+    & $PSScriptRoot/start-logging.ps1 -self:$self -all:$all -custom:$custom -file:$file
+}

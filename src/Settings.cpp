@@ -1,5 +1,6 @@
 #include "Main.hpp"
 #include "Settings.hpp"
+#include "json/DefaultConfig.hpp"
 
 #include "HMUI/Touchable.hpp"
 #include "HMUI/TableView_ScrollPositionType.hpp"
@@ -34,13 +35,22 @@ void SettingsViewController::RefreshConfigList() {
     for(auto& entry : std::filesystem::recursive_directory_iterator(ConfigsPath())) {
         if (entry.path().extension() == ".json") {
             std::string fullPath = entry.path().string();
+            bool retry = false, failed = false;
             // test loading the config
-            try {
-                ReadFromFile(fullPath, config);
-            } catch(const std::exception& err) {
-                LOG_ERROR("Could not load config file %s", fullPath.c_str());
+            do {
+                try {
+                    ReadFromFile(fullPath, config);
+                } catch(const std::exception& err) {
+                    LOG_ERROR("Could not load config file %s: %s", fullPath.c_str(), err.what());
+                    if(config.IsDefault) {
+                        writefile(fullPath, defaultConfigText);
+                        retry = true;
+                    } else
+                        failed = true;
+                }
+            } while(retry);
+            if(failed)
                 continue;
-            }
             data.emplace_back(entry.path().stem().string());
             fullConfigPaths.emplace_back(fullPath);
             if(globalConfig.SelectedConfig == fullPath)
