@@ -50,14 +50,14 @@ std::string TimeDependenceString(float timeDependence) {
     return ss.str();
 }
 
-std::string GetJudgementText(Judgement& judgement, int score, int before, int after, int accuracy, float timeDependence) {
+std::string GetJudgementText(Judgement& judgement, int score, int before, int after, int accuracy, float timeDependence, int maxScore) {
     auto& text = judgement.Text;
 
     text.set_beforeCut(std::to_string(before));
     text.set_accuracy(std::to_string(accuracy));
     text.set_afterCut(std::to_string(after));
     text.set_score(std::to_string(score));
-    text.set_percent(std::to_string(round(100 * (float) score / 115)));
+    text.set_percent(std::to_string(round(100 * (float) score / maxScore)));
     text.set_timeDependency(TimeDependenceString(timeDependence));
     text.set_beforeCutSegment(GetBestSegmentText(globalConfig.CurrentConfig->BeforeCutAngleSegments, before));
     text.set_accuracySegment(GetBestSegmentText(globalConfig.CurrentConfig->AccuracySegments, accuracy));
@@ -95,22 +95,24 @@ void UpdateScoreEffect(FlyingScoreEffect* flyingScoreEffect, int total, int befo
     std::string text;
     UnityEngine::Color color;
 
+    int maxScore = ScoreModel::GetNoteScoreDefinition(scoringType)->get_maxCutScore();
+
     if(scoringType == NoteData::ScoringType::BurstSliderElement) {
         auto&& judgement = globalConfig.CurrentConfig->ChainLinkDisplay.value_or(GetBestJudgement(globalConfig.CurrentConfig->Judgements, total));
 
-        text = GetJudgementText(judgement, total, before, after, accuracy, timeDependence);
+        text = GetJudgementText(judgement, total, before, after, accuracy, timeDependence, maxScore);
         color = judgement.Color;
     } else if(scoringType == NoteData::ScoringType::BurstSliderHead) {
         auto& judgementVector = globalConfig.CurrentConfig->ChainHeadJudgements;
         auto& judgement = GetBestJudgement(judgementVector, total);
 
-        text = GetJudgementText(judgement, total, before, after, accuracy, timeDependence);
+        text = GetJudgementText(judgement, total, before, after, accuracy, timeDependence, maxScore);
         color = GetJudgementColor(judgement, judgementVector, total);
     } else {
         auto& judgementVector = globalConfig.CurrentConfig->Judgements;
         auto& judgement = GetBestJudgement(judgementVector, total);
 
-        text = GetJudgementText(judgement, total, before, after, accuracy, timeDependence);
+        text = GetJudgementText(judgement, total, before, after, accuracy, timeDependence, maxScore);
         color = GetJudgementColor(judgement, judgementVector, total);
     }
 

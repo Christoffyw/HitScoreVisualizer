@@ -13,14 +13,12 @@ Having placed your config files in the folder doesn't mean you're ready to go ye
 
 ## How-To Config? (aka config explained)
 
-**UPDATE 1.20 has added new notes and has created changes for the config, old configs will work however arcs and chains may be inaccurate**
-
 When first running the game, it will create a default config which can be found at `/sdcard/ModData/com.beatgames.beatsaber/Mods/HitScoreVisualizer/HitScoreVisualizerConfig (default).json`.<br>
 You can use that file as a starting point in case you want to customize it. Just make sure to set `isDefaultConfig` to `false`.
 
 | Property name(s) | Explanation / Info | Example or possible values |
 | --- | --- | --- |
-| isDefaultConfig | Indicates whether this file is a default config file. This also means that it will be overwritten by the built-in default config. | true or false |
+| isDefaultConfig | Indicates whether this file is a default config file. This also means that it will likely be overwritten by the built-in default config. | true or false |
 | displayMode | - Currently unsupported, will always be the equivalent of "format" on PC. | "format"<br>"numeric"<br>"textOnly"<br>"scoreOnTop"<br>"" |
 | fixedPosition| The coordinate object that defines the fixed location where the hit scores have to be shown.<br>Either leave this out or set as `null` to fully disable. | {<br>"x": 0.0,<br>"y": 3.0,<br>	"z": -2.0<br>}<br><br>null |
 | targetPositionOffset| The coordinate object that indicates how much the hitscore fade animation target position has to be offset.<br>Note: If a fixed position is defined in the config, that one will take priority over this one and this will be fully ignored.<br>Either leave this out or set as `null` to fully disable.  | {<br>"x": 0.0,<br>"y": 3.0,<br>	"z": -2.0<br>}<br><br>null |
@@ -32,11 +30,12 @@ You can use that file as a starting point in case you want to customize it. Just
 | afterCutAngleJudgments | The list that can be used to customize the Judgments for the part of the swing after cutting the block (score is from 0 - 30).<br>Format token: %A<br> | Uses JudgmentSegments.<br>More info below. |
 | timeDependencyJudgments | The list that can be used to customize the Judgments for the time dependence (value is from 0 - 1).<br>Format token: %T<br> | Uses TimeDependenceJudgmentSegments.<br>More info below. |
 | chainHeadJudgments | The list that can be used to customize the Judgments for the new chain block heads. | Uses Judgment objects. More info below.
-| chainLinkDisplay | The judgment that will display when hitting the links of the chain block. `threshold` and `fade` don't work here because the links are a static score. | Uses Judgment objects. More info below.
+| chainLinkDisplay | The judgment that will display when hitting the links of the chain block. `threshold` and `fade` don't do anything here because the links are a static score. | Uses Judgment objects. More info below.
 ### Important info
 
 - The `text` property of Judgment, JudgmentSegment, and TimeDependenceJudgmentSegment all have support for [TextMeshPro formatting!](http://digitalnativestudios.com/textmeshpro/docs/rich-text/).
 - The order of Judgments and JudgmentSegments in the list doesn't matter anymore from version 3.0.0 and onwards. However, it's still advised to keep a descending order if you plan on targetting older versions of HSV as well.
+- `chainHeadJudgments` and `chainLinkDisplay` are not required in configs for backwards compatibility, and configs without them will simply not affect the displayed scores for those types of notes.
 
 ### Format tokens
 
@@ -48,6 +47,7 @@ You can use that file as a starting point in case you want to customize it. Just
 | %t | The time dependence of the swing. This value indicates how depedent the accuracy part of the score is upon *when* you hit the block, measured from 0 - 1. A value of 0 indicates a completely time independent swing, while a value of 1 indicates that the accuracy part of the score would vary greatly if the block was hit even slightly earlier or later.
 | %B, %C, %A, %T | Uses the Judgment text that matches the threshold as specified in either `beforeCutAngleJudgments`, `accuracyJudgments`, `afterCutAngleJudgments`, or `timeDependencyJudgments` (depending on the used token). |
 | %s | The total score of the cut. |
+| %p | The percentage of the total score of the cut out of the maximum possible. |
 | %% | A literal percent symbol. |
 | %n | A newline. |
 
