@@ -3,17 +3,17 @@
 	"name": "HitScoreVisualizer",
 	"id": "HitScoreVisualizer",
 	"author": "Christoffyw, Metalit",
-	"version": "2.5.0",
+	"version": "2.5.1",
 	"coverImage": "Cover.jpg",
 	"packageId": "com.beatgames.beatsaber",
-	"packageVersion": "1.21.0",
+	"packageVersion": "1.22.0",
 	"description": "Changes the scores that pop up when you hit notes",
 	"dependencies": [],
 	"modFiles": [
 		"libhitscorevisualizer.so"
 	],
 	"libraryFiles": [
-		"libbeatsaber-hook_3_7_4.so"
+		"libbeatsaber-hook_3_8_2.so"
 	],
 	"fileCopies": []
 }
