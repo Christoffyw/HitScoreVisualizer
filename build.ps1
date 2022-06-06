@@ -16,21 +16,16 @@ if ($help -eq $true) {
 }
 
 # if user specified clean, remove all build files
-if ($clean.IsPresent)
-{
-    if (Test-Path -Path "build")
-    {
+if ($clean.IsPresent) {
+    if (Test-Path -Path "build") {
         remove-item build -R
     }
 }
 
 
-if (($clean.IsPresent) -or (-not (Test-Path -Path "build")))
-{
+if (($clean.IsPresent) -or (-not (Test-Path -Path "build"))) {
     new-item -Path build -ItemType Directory
 } 
 
-Set-Location build
-& cmake -G "Ninja" -DCMAKE_BUILD_TYPE="RelWithDebInfo" ../
-& cmake --build .
-Set-Location ..
+& cmake -G "Ninja" -DCMAKE_BUILD_TYPE="RelWithDebInfo" -B build
+& cmake --build ./build
