@@ -21,6 +21,7 @@ auto get_##name##Tokens_size() { \
 class TokenizedText {
     public:
     TokenizedText() = default;
+    bool operator==(const TokenizedText&) const = default;
     
     TokenizedText(std::string str) {
         original = str;

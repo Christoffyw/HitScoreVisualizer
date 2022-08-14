@@ -34,6 +34,11 @@
       "id": "custom-types",
       "versionRange": "^0.15.13",
       "additionalData": {}
+    },
+    {
+      "id": "rapidjson-macros",
+      "versionRange": "^0.2.3",
+      "additionalData": {}
     }
   ],
   "additionalData": {}
