@@ -10,6 +10,8 @@
 
 #include "custom-types/shared/macros.hpp"
 
+#include <map>
+
 ___DECLARE_TYPE_WRAPPER_INHERITANCE(HSV, CustomList, Il2CppTypeEnum::IL2CPP_TYPE_CLASS, UnityEngine::MonoBehaviour, "HSV", { classof(HMUI::TableView::IDataSource*) }, 0, nullptr,
 
     DECLARE_INSTANCE_FIELD(GlobalNamespace::SimpleTextTableCell*, simpleTextTableCellInstance);
@@ -27,6 +29,7 @@ ___DECLARE_TYPE_WRAPPER_INHERITANCE(HSV, CustomList, Il2CppTypeEnum::IL2CPP_TYPE
 
     public:
     std::vector<std::string> data;
+    std::map<int, std::string> failures;
 )
 
 DECLARE_CLASS_CODEGEN(HSV, SettingsViewController, HMUI::ViewController,
@@ -41,6 +44,8 @@ DECLARE_CLASS_CODEGEN(HSV, SettingsViewController, HMUI::ViewController,
     void ConfigSelected(int idx);
     void RefreshConfigList();
     void RefreshUI();
+
+    DECLARE_DEFAULT_CTOR();
 
     DECLARE_OVERRIDE_METHOD(void, DidActivate, il2cpp_utils::il2cpp_type_check::MetadataGetter<&HMUI::ViewController::DidActivate>::get(), bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling);
 )

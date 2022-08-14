@@ -28,34 +28,40 @@ void SettingsViewController::ConfigSelected(int idx) {
 
 void SettingsViewController::RefreshConfigList() {
     auto& data = configList->data;
+    auto& failureMap = configList->failures;
     data.clear();
+    failureMap.clear();
     fullConfigPaths.clear();
 
     Config config;
     for(auto& entry : std::filesystem::recursive_directory_iterator(ConfigsPath())) {
-        if (entry.path().extension() == ".json") {
-            std::string fullPath = entry.path().string();
-            bool retry = false, failed = false;
-            // test loading the config
-            do {
-                try {
-                    ReadFromFile(fullPath, config);
-                } catch(const std::exception& err) {
-                    LOG_ERROR("Could not load config file %s: %s", fullPath.c_str(), err.what());
-                    if(config.IsDefault) {
-                        writefile(fullPath, defaultConfigText);
-                        retry = true;
-                    } else
-                        failed = true;
-                }
-            } while(retry);
-            if(failed)
-                continue;
-            data.emplace_back(entry.path().stem().string());
+        std::string fullPath = entry.path().string();
+        bool retry = false;
+        std::string failed = "";
+        // test loading the config
+        do {
+            try {
+                ReadFromFile(fullPath, config);
+            } catch(const std::exception& err) {
+                LOG_ERROR("Could not load config file %s: %s", fullPath.c_str(), err.what());
+                if(config.IsDefault) {
+                    writefile(fullPath, defaultConfigText);
+                    retry = true;
+                } else
+                    failed = std::string("Error loading config: ") + err.what();
+            }
+        } while(retry);
+        if(!failed.empty()) {
+            std::string redPath = "<color=red>" + entry.path().stem().string();
+            data.emplace_back(redPath);
             fullConfigPaths.emplace_back(fullPath);
-            if(globalConfig.SelectedConfig == fullPath)
-                selectedIdx = data.size() - 1;
+            failureMap.insert({data.size() - 1, failed});
+            continue;
         }
+        data.emplace_back(entry.path().stem().string());
+        fullConfigPaths.emplace_back(fullPath);
+        if(globalConfig.SelectedConfig == fullPath)
+            selectedIdx = data.size() - 1;
     }
     configList->tableView->ReloadData();
     if(selectedIdx >= 0) {
@@ -115,9 +121,16 @@ HMUI::TableCell* CustomList::CellForIdx(HMUI::TableView* tableView, int idx) {
 
         tableCell->text->set_richText(true);
         tableCell->text->set_enableWordWrapping(false);
+        BeatSaberUI::AddHoverHint(tableCell, "");
     }
 
     tableCell->set_text(data[idx]);
+    tableCell->GetComponent<HMUI::HoverHint*>()->set_text("");
+    tableCell->set_interactable(true);
+    if(failures.contains(idx)) {
+        tableCell->GetComponent<HMUI::HoverHint*>()->set_text(failures[idx]);
+        tableCell->set_interactable(false);
+    }
     return tableCell;
 }
 
