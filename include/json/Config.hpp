@@ -37,7 +37,7 @@ DECLARE_JSON_CLASS(HSV, FloatSegment,
 )
 
 DECLARE_JSON_CLASS(HSV, Config,
-    NAMED_AUTO_VALUE_DEFAULT(bool, IsDefault, true, "isDefaultConfig");
+    NAMED_AUTO_VALUE_DEFAULT(bool, IsDefault, false, "isDefaultConfig");
     NAMED_AUTO_VECTOR(HSV::Judgement, Judgements, "judgments");
     DESERIALIZE_ACTION(0,
         if(outerClass->Judgements.size() < 1)
