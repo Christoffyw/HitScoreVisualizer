@@ -7,19 +7,19 @@
 #include "UnityEngine/Vector3.hpp"
 
 DECLARE_JSON_CLASS(HSV, Vector3,
-    NAMED_AUTO_VALUE(float, X, "x");
-    NAMED_AUTO_VALUE(float, Y, "y");
-    NAMED_AUTO_VALUE(float, Z, "z");
+    NAMED_VALUE(float, X, "x");
+    NAMED_VALUE(float, Y, "y");
+    NAMED_VALUE(float, Z, "z");
 )
 
 DECLARE_JSON_CLASS(HSV, Judgement,
-    NAMED_AUTO_VALUE_DEFAULT(int, Threshold, 0, "threshold");
-    NAMED_AUTO_VALUE(std::string, UnprocessedText, "text");
-    NAMED_AUTO_VECTOR(float, UnprocessedColor, "color");
-    NAMED_AUTO_VALUE_OPTIONAL(bool, Fade, "fade");
+    NAMED_VALUE_DEFAULT(int, Threshold, 0, "threshold");
+    NAMED_VALUE(std::string, UnprocessedText, "text");
+    NAMED_VECTOR(float, UnprocessedColor, "color");
+    NAMED_VALUE_OPTIONAL(bool, Fade, "fade");
     DESERIALIZE_ACTION(0,
-        outerClass->Text = TokenizedText(outerClass->UnprocessedText);
-        outerClass->Color = UnityEngine::Color(outerClass->UnprocessedColor[0], outerClass->UnprocessedColor[1], outerClass->UnprocessedColor[2], outerClass->UnprocessedColor[3]);
+        self->Text = TokenizedText(self->UnprocessedText);
+        self->Color = UnityEngine::Color(self->UnprocessedColor[0], self->UnprocessedColor[1], self->UnprocessedColor[2], self->UnprocessedColor[3]);
     )
     public:
     TokenizedText Text;
@@ -27,51 +27,51 @@ DECLARE_JSON_CLASS(HSV, Judgement,
 )
 
 DECLARE_JSON_CLASS(HSV, Segment,
-    NAMED_AUTO_VALUE_DEFAULT(int, Threshold, 0, "threshold");
-    NAMED_AUTO_VALUE(std::string, Text, "text");
+    NAMED_VALUE_DEFAULT(int, Threshold, 0, "threshold");
+    NAMED_VALUE(std::string, Text, "text");
 )
 
 DECLARE_JSON_CLASS(HSV, FloatSegment,
-    NAMED_AUTO_VALUE_DEFAULT(float, Threshold, 0, "threshold");
-    NAMED_AUTO_VALUE(std::string, Text, "text");
+    NAMED_VALUE_DEFAULT(float, Threshold, 0, "threshold");
+    NAMED_VALUE(std::string, Text, "text");
 )
 
 DECLARE_JSON_CLASS(HSV, Config,
-    NAMED_AUTO_VALUE_DEFAULT(bool, IsDefault, false, "isDefaultConfig");
-    NAMED_AUTO_VECTOR(HSV::Judgement, Judgements, "judgments");
+    NAMED_VALUE_DEFAULT(bool, IsDefault, false, "isDefaultConfig");
+    NAMED_VECTOR(HSV::Judgement, Judgements, "judgments");
     DESERIALIZE_ACTION(0,
-        if(outerClass->Judgements.size() < 1)
+        if(self->Judgements.size() < 1)
             throw JSONException("no judgements found in config");
     )
-    NAMED_AUTO_VECTOR_DEFAULT(HSV::Judgement, ChainHeadJudgements, {}, "chainHeadJudgments");
+    NAMED_VECTOR_DEFAULT(HSV::Judgement, ChainHeadJudgements, {}, "chainHeadJudgments");
     DESERIALIZE_ACTION(1,
-        outerClass->HasChainHead = outerClass->ChainHeadJudgements.size() > 0;
-        if(outerClass->IsDefault && !outerClass->HasChainHead)
+        self->HasChainHead = self->ChainHeadJudgements.size() > 0;
+        if(self->IsDefault && !self->HasChainHead)
             throw JSONException("default config did not contain chain head judgements");
     )
-    NAMED_AUTO_VALUE_OPTIONAL(HSV::Judgement, ChainLinkDisplay, "chainLinkDisplay");
-    NAMED_AUTO_VECTOR_DEFAULT(HSV::Segment, BeforeCutAngleSegments, {}, "beforeCutAngleJudgments");
-    NAMED_AUTO_VECTOR_DEFAULT(HSV::Segment, AccuracySegments, {}, "accuracyJudgments");
-    NAMED_AUTO_VECTOR_DEFAULT(HSV::Segment, AfterCutAngleSegments, {}, "afterCutAngleJudgments");
-    NAMED_AUTO_VECTOR_DEFAULT(HSV::FloatSegment, TimeDependenceSegments, {}, "timeDependencyJudgments");
-    NAMED_AUTO_VALUE_OPTIONAL(float, FixedPosX, "fixedPosX");
-    NAMED_AUTO_VALUE_OPTIONAL(float, FixedPosY, "fixedPosY");
-    NAMED_AUTO_VALUE_OPTIONAL(float, FixedPosZ, "fixedPosZ");
-    NAMED_AUTO_VALUE_OPTIONAL(bool, UseFixedPos, "useFixedPos");
-    NAMED_AUTO_VALUE_OPTIONAL(HSV::Vector3, UnprocessedFixedPos, "fixedPosition");
-    NAMED_AUTO_VALUE_OPTIONAL(HSV::Vector3, UnprocessedPosOffset, "targetPositionOffset");
+    NAMED_VALUE_OPTIONAL(HSV::Judgement, ChainLinkDisplay, "chainLinkDisplay");
+    NAMED_VECTOR_DEFAULT(HSV::Segment, BeforeCutAngleSegments, {}, "beforeCutAngleJudgments");
+    NAMED_VECTOR_DEFAULT(HSV::Segment, AccuracySegments, {}, "accuracyJudgments");
+    NAMED_VECTOR_DEFAULT(HSV::Segment, AfterCutAngleSegments, {}, "afterCutAngleJudgments");
+    NAMED_VECTOR_DEFAULT(HSV::FloatSegment, TimeDependenceSegments, {}, "timeDependencyJudgments");
+    NAMED_VALUE_OPTIONAL(float, FixedPosX, "fixedPosX");
+    NAMED_VALUE_OPTIONAL(float, FixedPosY, "fixedPosY");
+    NAMED_VALUE_OPTIONAL(float, FixedPosZ, "fixedPosZ");
+    NAMED_VALUE_OPTIONAL(bool, UseFixedPos, "useFixedPos");
+    NAMED_VALUE_OPTIONAL(HSV::Vector3, UnprocessedFixedPos, "fixedPosition");
+    NAMED_VALUE_OPTIONAL(HSV::Vector3, UnprocessedPosOffset, "targetPositionOffset");
     DESERIALIZE_ACTION(2,
-        if(outerClass->UseFixedPos.has_value() && outerClass->UseFixedPos.value())
-            outerClass->FixedPos = UnityEngine::Vector3(outerClass->FixedPosX.value_or(0), outerClass->FixedPosY.value_or(0), outerClass->FixedPosZ.value_or(0));
-        else if(outerClass->UnprocessedFixedPos.has_value())
-            outerClass->FixedPos = UnityEngine::Vector3(outerClass->UnprocessedFixedPos->X, outerClass->UnprocessedFixedPos->Y, outerClass->UnprocessedFixedPos->Z);
+        if(self->UseFixedPos.has_value() && self->UseFixedPos.value())
+            self->FixedPos = UnityEngine::Vector3(self->FixedPosX.value_or(0), self->FixedPosY.value_or(0), self->FixedPosZ.value_or(0));
+        else if(self->UnprocessedFixedPos.has_value())
+            self->FixedPos = UnityEngine::Vector3(self->UnprocessedFixedPos->X, self->UnprocessedFixedPos->Y, self->UnprocessedFixedPos->Z);
     )
     DESERIALIZE_ACTION(3,
-        if(outerClass->UnprocessedPosOffset)
-            outerClass->PosOffset = UnityEngine::Vector3(outerClass->UnprocessedPosOffset->X, outerClass->UnprocessedPosOffset->Y, outerClass->UnprocessedPosOffset->Z);
+        if(self->UnprocessedPosOffset)
+            self->PosOffset = UnityEngine::Vector3(self->UnprocessedPosOffset->X, self->UnprocessedPosOffset->Y, self->UnprocessedPosOffset->Z);
     )
-    NAMED_AUTO_VALUE_DEFAULT(int, TimeDependenceDecimalPrecision, 1, "timeDependencyDecimalPrecision");
-    NAMED_AUTO_VALUE_DEFAULT(int, TimeDependenceDecimalOffset, 2, "timeDependencyDecimalOffset");
+    NAMED_VALUE_DEFAULT(int, TimeDependenceDecimalPrecision, 1, "timeDependencyDecimalPrecision");
+    NAMED_VALUE_DEFAULT(int, TimeDependenceDecimalOffset, 2, "timeDependencyDecimalOffset");
     public:
     std::optional<UnityEngine::Vector3> FixedPos;
     std::optional<UnityEngine::Vector3> PosOffset;
@@ -80,8 +80,8 @@ DECLARE_JSON_CLASS(HSV, Config,
 )
 
 DECLARE_JSON_CLASS(HSV, GlobalConfig,
-    NAMED_AUTO_VALUE_DEFAULT(bool, ModEnabled, true, "isEnabled");
-    NAMED_AUTO_VALUE_DEFAULT(std::string, SelectedConfig, "", "selectedConfig");
+    NAMED_VALUE_DEFAULT(bool, ModEnabled, true, "isEnabled");
+    NAMED_VALUE_DEFAULT(std::string, SelectedConfig, "", "selectedConfig");
     public:
     std::optional<HSV::Config> CurrentConfig = std::nullopt;
 

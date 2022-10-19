@@ -4,7 +4,7 @@
   "info": {
     "name": "HitScoreVisualizer",
     "id": "HitScoreVisualizer",
-    "version": "2.6.0",
+    "version": "2.7.0",
     "url": null,
     "additionalData": {
       "overrideSoName": "libhitscorevisualizer.so"
@@ -13,7 +13,7 @@
   "dependencies": [
     {
       "id": "beatsaber-hook",
-      "versionRange": "^3.9.0",
+      "versionRange": "^3.14.0",
       "additionalData": {
         "extraFiles": [
           "src/inline-hook"
@@ -22,22 +22,22 @@
     },
     {
       "id": "codegen",
-      "versionRange": "^0.25.0",
+      "versionRange": "^0.28.0",
       "additionalData": {}
     },
     {
       "id": "questui",
-      "versionRange": "^0.16.2",
+      "versionRange": "^0.17.3",
       "additionalData": {}
     },
     {
       "id": "custom-types",
-      "versionRange": "^0.15.13",
+      "versionRange": "^0.15.21",
       "additionalData": {}
     },
     {
       "id": "rapidjson-macros",
-      "versionRange": "^0.2.3",
+      "versionRange": "^0.3.0",
       "additionalData": {}
     }
   ],
