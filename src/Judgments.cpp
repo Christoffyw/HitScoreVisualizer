@@ -72,7 +72,7 @@ UnityEngine::Color GetJudgementColor(Judgement& judgement, std::vector<Judgement
         return judgement.Color;
     // get the lowest judgement with a higher threshold
     Judgement* best = nullptr;
-    for(auto& judgement : globalConfig.CurrentConfig->Judgements) {
+    for(auto& judgement : judgements) {
         if(score < judgement.Threshold && (!best || judgement.Threshold < best->Threshold))
             best = &judgement;
     }

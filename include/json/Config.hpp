@@ -50,6 +50,11 @@ DECLARE_JSON_CLASS(HSV, Config,
             throw JSONException("default config did not contain chain head judgements");
     )
     NAMED_VALUE_OPTIONAL(HSV::Judgement, ChainLinkDisplay, "chainLinkDisplay");
+    DESERIALIZE_ACTION(2,
+        self->HasChainLink = self->ChainLinkDisplay.has_value();
+        if(self->IsDefault && !self->HasChainLink)
+            throw JSONException("default config did not contain chain link judgement");
+    )
     NAMED_VECTOR_DEFAULT(HSV::Segment, BeforeCutAngleSegments, {}, "beforeCutAngleJudgments");
     NAMED_VECTOR_DEFAULT(HSV::Segment, AccuracySegments, {}, "accuracyJudgments");
     NAMED_VECTOR_DEFAULT(HSV::Segment, AfterCutAngleSegments, {}, "afterCutAngleJudgments");
@@ -60,13 +65,11 @@ DECLARE_JSON_CLASS(HSV, Config,
     NAMED_VALUE_OPTIONAL(bool, UseFixedPos, "useFixedPos");
     NAMED_VALUE_OPTIONAL(HSV::Vector3, UnprocessedFixedPos, "fixedPosition");
     NAMED_VALUE_OPTIONAL(HSV::Vector3, UnprocessedPosOffset, "targetPositionOffset");
-    DESERIALIZE_ACTION(2,
+    DESERIALIZE_ACTION(3,
         if(self->UseFixedPos.has_value() && self->UseFixedPos.value())
             self->FixedPos = UnityEngine::Vector3(self->FixedPosX.value_or(0), self->FixedPosY.value_or(0), self->FixedPosZ.value_or(0));
         else if(self->UnprocessedFixedPos.has_value())
             self->FixedPos = UnityEngine::Vector3(self->UnprocessedFixedPos->X, self->UnprocessedFixedPos->Y, self->UnprocessedFixedPos->Z);
-    )
-    DESERIALIZE_ACTION(3,
         if(self->UnprocessedPosOffset)
             self->PosOffset = UnityEngine::Vector3(self->UnprocessedPosOffset->X, self->UnprocessedPosOffset->Y, self->UnprocessedPosOffset->Z);
     )
