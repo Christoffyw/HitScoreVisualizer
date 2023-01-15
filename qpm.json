@@ -22,7 +22,7 @@
     },
     {
       "id": "codegen",
-      "versionRange": "^0.28.0",
+      "versionRange": "^0.32.0",
       "additionalData": {}
     },
     {
@@ -37,7 +37,7 @@
     },
     {
       "id": "rapidjson-macros",
-      "versionRange": "^0.3.0",
+      "versionRange": "^0.4.5",
       "additionalData": {}
     }
   ],
