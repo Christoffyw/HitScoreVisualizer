@@ -85,8 +85,8 @@ namespace HSV {
     )
 
     DECLARE_JSON_CLASS(GlobalConfig,
-        VALUE_DEFAULT(bool, ModEnabled, true, "isEnabled");
-        VALUE_DEFAULT(std::string, SelectedConfig, "", "selectedConfig");
+        NAMED_VALUE_DEFAULT(bool, ModEnabled, true, "isEnabled");
+        NAMED_VALUE_DEFAULT(std::string, SelectedConfig, "", "selectedConfig");
         public:
         std::optional<Config> CurrentConfig = std::nullopt;
 
