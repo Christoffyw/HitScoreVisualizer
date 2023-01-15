@@ -1,0 +1,101 @@
+name: Build
+
+env:
+  module_id: hitscorevisualizer
+  qmodName: HitScoreVisualizer
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+        name: Checkout
+        with:
+          submodules: true
+          lfs: true
+
+      - uses: seanmiddleditch/gha-setup-ninja@v3
+
+      - name: Create ndkpath.txt
+        run: |
+          echo "$ANDROID_NDK_LATEST_HOME" > ${GITHUB_WORKSPACE}/ndkpath.txt
+          cat ${GITHUB_WORKSPACE}/ndkpath.txt
+
+      - name: QPM Rust Action
+        uses: Fernthedev/qpm-rust-action@main
+        with:
+          workflow_token: ${{ secrets.GITHUB_TOKEN }}
+
+          restore: true
+          cache: true
+
+          publish: false # qpm package
+
+      - name: List Post Restore
+        run: |
+          echo includes:
+          ls -la ${GITHUB_WORKSPACE}/extern/includes
+          echo libs:
+          ls -la ${GITHUB_WORKSPACE}/extern/libs
+          echo cache:
+          ls -la $HOME/.local/share/QPM-Rust/cache
+
+      - name: Build
+        run: |
+          cd ${GITHUB_WORKSPACE}
+          pwsh -Command ./build.ps1
+
+      - name: Get Library Name
+        id: libname
+        run: |
+          cd ./build/
+          pattern="lib${module_id}*.so"
+          files=( $pattern )
+          echo ::set-output name=NAME::"${files[0]}"
+
+      - name: Upload non-debug artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ steps.libname.outputs.NAME }}
+          path: ./build/${{ steps.libname.outputs.NAME }}
+          if-no-files-found: error
+
+      - name: Check for release
+        uses: actions-ecosystem/action-regex-match@v2
+        id: commit-regex
+        if: github.event_name != 'pull_request'
+        with:
+          text: ${{ github.event.head_commit.message }}
+          regex: ^release.*?((v?)((?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)?)):?\W*(.*)
+          flags: i
+
+      - name: Rename debug
+        if: github.event_name != 'pull_request' && steps.commit-regex.outputs.match != ''
+        run: |
+          mv ./build/debug/${{ steps.libname.outputs.NAME }} ./build/debug/debug_${{ steps.libname.outputs.NAME }}
+
+      - name: Create qmod
+        if: github.event_name != 'pull_request' && steps.commit-regex.outputs.match != ''
+        run: |
+          pwsh -Command ./createqmod.ps1 ${{env.qmodName}}
+
+      - name: Upload to Release
+        id: upload_file_release
+        uses: softprops/action-gh-release@v0.1.12
+        if: github.event_name != 'pull_request' && steps.commit-regex.outputs.match != ''
+        with:
+          name: ${{ steps.commit-regex.outputs.group4 }}
+          tag_name: ${{ steps.commit-regex.outputs.group1 }}
+          files: |
+            ./build/${{ steps.libname.outputs.NAME }}
+            ./build/debug/debug_${{ steps.libname.outputs.NAME }}
+            ./${{ env.qmodName }}.qmod
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
