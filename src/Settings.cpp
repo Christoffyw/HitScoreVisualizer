@@ -46,7 +46,7 @@ void SettingsViewController::RefreshConfigList() {
                 LOG_ERROR("Could not load config file %s: %s", fullPath.c_str(), err.what());
                 if(config.IsDefault) {
                     writefile(fullPath, defaultConfigText);
-                    retry = true;
+                    retry = !retry;
                 } else
                     failed = std::string("Error loading config: ") + err.what();
             }

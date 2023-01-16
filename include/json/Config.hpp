@@ -8,16 +8,25 @@
 
 namespace HSV {
 
+    class FlexibleFloat : public TypeOptions<int, float> {
+        public: operator float() const {
+            if(auto v = GetValue<float>())
+                return *v;
+            return *GetValue<int>();
+        }
+        using TypeOptions<int, float>::TypeOptions;
+    };
+
     DECLARE_JSON_CLASS(Vector3,
-        NAMED_VALUE(float, X, "x");
-        NAMED_VALUE(float, Y, "y");
-        NAMED_VALUE(float, Z, "z");
+        NAMED_VALUE(FlexibleFloat, X, "x");
+        NAMED_VALUE(FlexibleFloat, Y, "y");
+        NAMED_VALUE(FlexibleFloat, Z, "z");
     )
 
     DECLARE_JSON_CLASS(Judgement,
         NAMED_VALUE_DEFAULT(int, Threshold, 0, "threshold");
         NAMED_VALUE(std::string, UnprocessedText, "text");
-        NAMED_VECTOR(float, UnprocessedColor, "color");
+        NAMED_VECTOR(FlexibleFloat, UnprocessedColor, "color");
         NAMED_VALUE_OPTIONAL(bool, Fade, "fade");
         DESERIALIZE_ACTION(0,
             self->Text = TokenizedText(self->UnprocessedText);
@@ -34,7 +43,7 @@ namespace HSV {
     )
 
     DECLARE_JSON_CLASS(FloatSegment,
-        NAMED_VALUE_DEFAULT(float, Threshold, 0, "threshold");
+        NAMED_VALUE_DEFAULT(FlexibleFloat, Threshold, 0, "threshold");
         NAMED_VALUE(std::string, Text, "text");
     )
 
@@ -61,9 +70,9 @@ namespace HSV {
         NAMED_VECTOR_DEFAULT(Segment, AccuracySegments, {}, "accuracyJudgments");
         NAMED_VECTOR_DEFAULT(Segment, AfterCutAngleSegments, {}, "afterCutAngleJudgments");
         NAMED_VECTOR_DEFAULT(FloatSegment, TimeDependenceSegments, {}, "timeDependencyJudgments");
-        NAMED_VALUE_OPTIONAL(float, FixedPosX, "fixedPosX");
-        NAMED_VALUE_OPTIONAL(float, FixedPosY, "fixedPosY");
-        NAMED_VALUE_OPTIONAL(float, FixedPosZ, "fixedPosZ");
+        NAMED_VALUE_OPTIONAL(FlexibleFloat, FixedPosX, "fixedPosX");
+        NAMED_VALUE_OPTIONAL(FlexibleFloat, FixedPosY, "fixedPosY");
+        NAMED_VALUE_OPTIONAL(FlexibleFloat, FixedPosZ, "fixedPosZ");
         NAMED_VALUE_OPTIONAL(bool, UseFixedPos, "useFixedPos");
         NAMED_VALUE_OPTIONAL(Vector3, UnprocessedFixedPos, "fixedPosition");
         NAMED_VALUE_OPTIONAL(Vector3, UnprocessedPosOffset, "targetPositionOffset");

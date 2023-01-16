@@ -48,18 +48,22 @@ bool LoadCurrentConfig() {
         WriteToFile(GlobalConfigPath(), globalConfig);
     }
     Config config;
-    try {
-        ReadFromFile(globalConfig.SelectedConfig, config);
-        globalConfig.CurrentConfig = config;
-    } catch(const std::exception& err) {
-        LOG_ERROR("Error loading config: %s", err.what());
-        if(config.IsDefault) {
-            writefile(globalConfig.SelectedConfig, defaultConfigText);
-            return LoadCurrentConfig();
-        } else
-            return false;
-    }
-    return true;
+    bool retry = false;
+    do {
+        try {
+            ReadFromFile(globalConfig.SelectedConfig, config);
+            globalConfig.CurrentConfig = config;
+            return true;
+        } catch(const std::exception& err) {
+            LOG_ERROR("Could not load config file %s: %s", globalConfig.SelectedConfig.c_str(), err.what());
+            if(config.IsDefault) {
+                writefile(globalConfig.SelectedConfig, defaultConfigText);
+                retry = !retry;
+            } else
+                return false;
+        }
+    } while(retry);
+    return false;
 }
 
 // global config
