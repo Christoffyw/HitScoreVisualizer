@@ -35,6 +35,7 @@ ___DECLARE_TYPE_WRAPPER_INHERITANCE(HSV, CustomList, Il2CppTypeEnum::IL2CPP_TYPE
 DECLARE_CLASS_CODEGEN(HSV, SettingsViewController, HMUI::ViewController,
 
     UnityEngine::UI::Toggle* enabledToggle;
+    UnityEngine::UI::Toggle* hideToggle;
     TMPro::TextMeshProUGUI* selectedConfig;
     HSV::CustomList* configList;
     

@@ -74,6 +74,7 @@ void SettingsViewController::RefreshUI() {
     RefreshConfigList();
     selectedConfig->set_text("Current Config: " + configList->data[selectedIdx]);
     enabledToggle->set_isOn(globalConfig.ModEnabled);
+    hideToggle->set_isOn(globalConfig.HideUntilDone);
 }
 
 void SettingsViewController::DidActivate(bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling) {
@@ -95,9 +96,15 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
         });
         BeatSaberUI::AddHoverHint(enabledToggle, "Toggles whether the mod is active or not");
 
+        hideToggle = BeatSaberUI::CreateToggle(textLayout->get_transform(), "Hide Until Calculation Finishes", globalConfig.HideUntilDone, [](bool enabled){
+            globalConfig.HideUntilDone = enabled;
+            WriteToFile(GlobalConfigPath(), globalConfig);
+        });
+        BeatSaberUI::AddHoverHint(enabledToggle, "With this enabled, the hit scores will not be displayed until the score has been finalized");
+
         selectedConfig = BeatSaberUI::CreateText(textLayout, "Current Config: " + std::filesystem::path(globalConfig.SelectedConfig).stem().string(), false);
 
-        configList = BeatSaberUI::CreateScrollableCustomSourceList<CustomList*>(container, UnityEngine::Vector2(50, 60), [this](int idx) { ConfigSelected(idx); });
+        configList = BeatSaberUI::CreateScrollableCustomSourceList<CustomList*>(container, UnityEngine::Vector2(50, 50), [this](int idx) { ConfigSelected(idx); });
     }
     RefreshUI();
 }

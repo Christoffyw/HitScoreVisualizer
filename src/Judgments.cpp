@@ -131,6 +131,11 @@ void Judge(CutScoreBuffer* cutScoreBuffer, FlyingScoreEffect* flyingScoreEffect,
         return;
     }
 
+    if(!cutScoreBuffer->get_isFinished() && globalConfig.HideUntilDone) {
+        flyingScoreEffect->text->set_text("");
+        return;
+    }
+
     // get scores for each part of the cut
     int before = cutScoreBuffer->get_beforeCutScore();
     int after = cutScoreBuffer->get_afterCutScore();
