@@ -1,4 +1,4 @@
-name: Publish
+name: Build
 
 env:
   module_id: hitscorevisualizer
@@ -6,13 +6,10 @@ env:
 
 on:
   workflow_dispatch:
-    inputs:
-      release_ver:
-        description: 'Version to tag release'
-        required: true
-      release_msg:
-        description: 'Message for release'
-        required: true
+  push:
+    branches-ignore:
+      - 'version*'
+  pull_request:
 
 jobs:
   build:
@@ -49,10 +46,25 @@ jobs:
           echo libs:
           ls -la ${GITHUB_WORKSPACE}/extern/libs
 
-      - name: Build
+      - name: Cache FFMPEG
+        id: cache-ffmpeg
+        uses: actions/cache@v3
+        with:
+          path: ffmpeg
+          key: ${{ hashFiles('**/update_ffmpeg.py') }}
+
+      - name: Get FFMPEG
+        if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
         run: |
           cd ${GITHUB_WORKSPACE}
-          pwsh -Command ./build.ps1
+          pip install PyGithub
+          pip install requests
+          python3 ./update_ffmpeg.py
+
+      - name: Build & create qmod
+        run: |
+          cd ${GITHUB_WORKSPACE}
+          qpm s qmod
 
       - name: Get Library Name
         id: libname
@@ -61,24 +73,27 @@ jobs:
           pattern="lib${module_id}*.so"
           files=( $pattern )
           echo NAME="${files[0]}" >> $GITHUB_OUTPUT
-
       - name: Rename debug
         run: |
           mv ./build/debug/${{ steps.libname.outputs.NAME }} ./build/debug/debug_${{ steps.libname.outputs.NAME }}
 
-      - name: Create qmod
-        run: |
-          pwsh -Command ./createqmod.ps1 ${{env.qmodName}}
-
-      - name: Upload to Release
-        id: upload_file_release
-        uses: softprops/action-gh-release@v0.1.12
+      - name: Upload non-debug artifact
+        uses: actions/upload-artifact@v2
         with:
-          name: ${{ github.event.inputs.release_msg }}
-          tag_name: ${{ github.event.inputs.release_ver }}
-          files: |
-            ./build/${{ steps.libname.outputs.NAME }}
-            ./build/debug/debug_${{ steps.libname.outputs.NAME }}
-            ./${{ env.qmodName }}.qmod
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          name: ${{ steps.libname.outputs.NAME }}
+          path: ./build/${{ steps.libname.outputs.NAME }}
+          if-no-files-found: error
+
+      - name: Upload debug artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: debug_${{ steps.libname.outputs.NAME }}
+          path: ./build/debug/debug_${{ steps.libname.outputs.NAME }}
+          if-no-files-found: error
+
+      - name: Upload qmod artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ env.qmodName }}.qmod
+          path: ./${{ env.qmodName }}.qmod
+          if-no-files-found: error
