@@ -1,19 +1,56 @@
-#include "Main.hpp"
 #include "Settings.hpp"
-#include "json/DefaultConfig.hpp"
 
 #include "HMUI/Touchable.hpp"
-#include "HMUI/TableView_ScrollPositionType.hpp"
-
-#include "questui/shared/BeatSaberUI.hpp"
-
-#include <filesystem>
+#include "Main.hpp"
+#include "UnityEngine/Resources.hpp"
+#include "bsml/shared/BSML-Lite.hpp"
+#include "json/DefaultConfig.hpp"
 
 DEFINE_TYPE(HSV, CustomList);
 DEFINE_TYPE(HSV, SettingsViewController);
 
-using namespace QuestUI;
 using namespace HSV;
+
+void CustomList::ctor() {
+    INVOKE_CTOR();
+    expandCell = false;
+    reuseIdentifier = "HSVConfigListTableCell";
+    cellSize = 8;
+    tableView = nullptr;
+}
+
+HMUI::TableCell* CustomList::CellForIdx(HMUI::TableView* tableView, int idx) {
+    auto tableCell = (GlobalNamespace::SimpleTextTableCell*) tableView->DequeueReusableCellForIdentifier(reuseIdentifier).unsafePtr();
+    if (!tableCell) {
+        auto simpleTextTableCellInstance = UnityEngine::Resources::FindObjectsOfTypeAll<GlobalNamespace::SimpleTextTableCell*>()->First([](auto x) {
+            return x->name == std::string("SimpleTextTableCell");
+        });
+        tableCell = Instantiate(simpleTextTableCellInstance);
+        tableCell->reuseIdentifier = reuseIdentifier;
+
+        tableCell->_text->richText = true;
+        tableCell->_text->enableWordWrapping = false;
+        BSML::Lite::AddHoverHint(tableCell, "");
+    }
+
+    tableCell->text = data[idx];
+    tableCell->GetComponent<HMUI::HoverHint*>()->text = "";
+    tableCell->interactable = true;
+    if (failures.contains(idx)) {
+        tableCell->GetComponent<HMUI::HoverHint*>()->text = failures[idx];
+        tableCell->interactable = false;
+    }
+    tableCell->gameObject->active = true;
+    return tableCell;
+}
+
+float CustomList::CellSize() {
+    return cellSize;
+}
+
+int CustomList::NumberOfCells() {
+    return data.size();
+}
 
 int SettingsViewController::selectedIdx = -1;
 std::vector<std::string> SettingsViewController::fullConfigPaths = {};
@@ -23,7 +60,7 @@ void SettingsViewController::ConfigSelected(int idx) {
     globalConfig.SelectedConfig = fullConfigPaths[idx];
     WriteToFile(GlobalConfigPath(), globalConfig);
     LoadCurrentConfig();
-    selectedConfig->set_text("Current Config: " + configList->data[idx]);
+    selectedConfig->text = "Current Config: " + configList->data[idx];
 }
 
 void SettingsViewController::RefreshConfigList() {
@@ -34,7 +71,7 @@ void SettingsViewController::RefreshConfigList() {
     fullConfigPaths.clear();
 
     Config config;
-    for(auto& entry : std::filesystem::recursive_directory_iterator(ConfigsPath())) {
+    for (auto& entry : std::filesystem::recursive_directory_iterator(ConfigsPath())) {
         std::string fullPath = entry.path().string();
         bool retry = false;
         std::string failed = "";
@@ -42,16 +79,16 @@ void SettingsViewController::RefreshConfigList() {
         do {
             try {
                 ReadFromFile(fullPath, config);
-            } catch(const std::exception& err) {
-                LOG_ERROR("Could not load config file %s: %s", fullPath.c_str(), err.what());
-                if(config.IsDefault) {
+            } catch (std::exception const& err) {
+                logger.error("Could not load config file {}: {}", fullPath, err.what());
+                if (config.IsDefault) {
                     writefile(fullPath, defaultConfigText);
                     retry = !retry;
                 } else
                     failed = std::string("Error loading config: ") + err.what();
             }
-        } while(retry);
-        if(!failed.empty()) {
+        } while (retry);
+        if (!failed.empty()) {
             std::string redPath = "<color=red>" + entry.path().stem().string();
             data.emplace_back(redPath);
             fullConfigPaths.emplace_back(fullPath);
@@ -60,11 +97,11 @@ void SettingsViewController::RefreshConfigList() {
         }
         data.emplace_back(entry.path().stem().string());
         fullConfigPaths.emplace_back(fullPath);
-        if(globalConfig.SelectedConfig == fullPath)
+        if (globalConfig.SelectedConfig == fullPath)
             selectedIdx = data.size() - 1;
     }
     configList->tableView->ReloadData();
-    if(selectedIdx >= 0) {
+    if (selectedIdx >= 0) {
         configList->tableView->SelectCellWithIdx(selectedIdx, false);
         configList->tableView->ScrollToCellWithIdx(selectedIdx, HMUI::TableView::ScrollPositionType::Beginning, false);
     }
@@ -72,79 +109,38 @@ void SettingsViewController::RefreshConfigList() {
 
 void SettingsViewController::RefreshUI() {
     RefreshConfigList();
-    selectedConfig->set_text("Current Config: " + configList->data[selectedIdx]);
-    enabledToggle->set_isOn(globalConfig.ModEnabled);
-    hideToggle->set_isOn(globalConfig.HideUntilDone);
+    selectedConfig->text = "Current Config: " + configList->data[selectedIdx];
+    enabledToggle->toggle->isOn = globalConfig.ModEnabled;
+    hideToggle->toggle->isOn = globalConfig.HideUntilDone;
 }
 
 void SettingsViewController::DidActivate(bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling) {
+    if (firstActivation) {
+        gameObject->AddComponent<HMUI::Touchable*>();
+        auto container = BSML::Lite::CreateVerticalLayoutGroup(transform);
 
-    if(firstActivation) {
-        get_gameObject()->AddComponent<HMUI::Touchable*>();
-        auto container = BeatSaberUI::CreateVerticalLayoutGroup(get_transform());
+        auto textLayout = BSML::Lite::CreateVerticalLayoutGroup(container);
+        textLayout->childForceExpandHeight = false;
+        textLayout->childForceExpandWidth = false;
+        textLayout->childControlHeight = true;
+        textLayout->spacing = 1.5;
 
-        auto textLayout = BeatSaberUI::CreateVerticalLayoutGroup(container->get_transform());
-        textLayout->set_childForceExpandHeight(false);
-        textLayout->set_childForceExpandWidth(false);
-        textLayout->set_childControlHeight(true);
-        textLayout->set_spacing(1.5);
-
-        BeatSaberUI::CreateText(textLayout, "HitScoreVisualizer settings.");
-        enabledToggle = BeatSaberUI::CreateToggle(textLayout->get_transform(), "Mod Enabled", globalConfig.ModEnabled, [](bool enabled){
+        enabledToggle = BSML::Lite::CreateToggle(textLayout, "Mod Enabled", globalConfig.ModEnabled, [](bool enabled) {
             globalConfig.ModEnabled = enabled;
             WriteToFile(GlobalConfigPath(), globalConfig);
         });
-        BeatSaberUI::AddHoverHint(enabledToggle, "Toggles whether the mod is active or not");
+        BSML::Lite::AddHoverHint(enabledToggle, "Toggles whether the mod is active or not");
 
-        hideToggle = BeatSaberUI::CreateToggle(textLayout->get_transform(), "Hide Until Calculation Finishes", globalConfig.HideUntilDone, [](bool enabled){
+        hideToggle = BSML::Lite::CreateToggle(textLayout, "Hide Until Calculation Finishes", globalConfig.HideUntilDone, [](bool enabled) {
             globalConfig.HideUntilDone = enabled;
             WriteToFile(GlobalConfigPath(), globalConfig);
         });
-        BeatSaberUI::AddHoverHint(enabledToggle, "With this enabled, the hit scores will not be displayed until the score has been finalized");
+        BSML::Lite::AddHoverHint(enabledToggle, "With this enabled, the hit scores will not be displayed until the score has been finalized");
 
-        selectedConfig = BeatSaberUI::CreateText(textLayout, "Current Config: " + std::filesystem::path(globalConfig.SelectedConfig).stem().string(), false);
+        selectedConfig =
+            BSML::Lite::CreateText(textLayout, "Current Config: " + std::filesystem::path(globalConfig.SelectedConfig).stem().string());
 
-        configList = BeatSaberUI::CreateScrollableCustomSourceList<CustomList*>(container, UnityEngine::Vector2(50, 50), [this](int idx) { ConfigSelected(idx); });
+        configList = BSML::Lite::CreateScrollableCustomSourceList<CustomList*>(container, {50, 50}, [this](int idx) { ConfigSelected(idx); });
     }
     RefreshUI();
-}
-
-void CustomList::ctor() {
-    INVOKE_CTOR();
-    expandCell = false;
-    reuseIdentifier = StringW("HSVConfigListTableCell");
-    cellSize = 8;
-    tableView = nullptr;
-}
-
-HMUI::TableCell* CustomList::CellForIdx(HMUI::TableView* tableView, int idx) {
-    auto tableCell = (GlobalNamespace::SimpleTextTableCell*) tableView->DequeueReusableCellForIdentifier(reuseIdentifier);
-    if (!tableCell) {
-        auto simpleTextTableCellInstance = UnityEngine::Resources::FindObjectsOfTypeAll<GlobalNamespace::SimpleTextTableCell*>().First([](auto x) {
-            return x->get_name() == "SimpleTextTableCell";
-        });
-        tableCell = Instantiate(simpleTextTableCellInstance);
-        tableCell->set_reuseIdentifier(reuseIdentifier);
-
-        tableCell->text->set_richText(true);
-        tableCell->text->set_enableWordWrapping(false);
-        BeatSaberUI::AddHoverHint(tableCell, "");
-    }
-
-    tableCell->set_text(data[idx]);
-    tableCell->GetComponent<HMUI::HoverHint*>()->set_text("");
-    tableCell->set_interactable(true);
-    if(failures.contains(idx)) {
-        tableCell->GetComponent<HMUI::HoverHint*>()->set_text(failures[idx]);
-        tableCell->set_interactable(false);
-    }
-    return tableCell;
-}
-
-float CustomList::CellSize() {
-    return cellSize;
-}
-
-int CustomList::NumberOfCells() {
-    return data.size();
 }

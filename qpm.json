@@ -1,19 +1,50 @@
 {
+  "version": "0.1.0",
   "sharedDir": "shared",
   "dependenciesDir": "extern",
   "info": {
     "name": "HitScoreVisualizer",
     "id": "HitScoreVisualizer",
-    "version": "2.7.2",
+    "version": "2.8.0",
     "url": null,
     "additionalData": {
       "overrideSoName": "libhitscorevisualizer.so"
     }
   },
+  "workspace": {
+    "scripts": {
+      "build": [
+        "pwsh ./scripts/build.ps1 $0?"
+      ],
+      "copy": [
+        "pwsh ./scripts/copy.ps1 $0:?",
+        "pwsh ./scripts/restart-game.ps1"
+      ],
+      "log": [
+        "pwsh ./scripts/start-logging.ps1 $0:?"
+      ],
+      "qmod": [
+        "pwsh ./scripts/build.ps1 $0?",
+        "pwsh ./scripts/createqmod.ps1"
+      ],
+      "restart": [
+        "pwsh ./scripts/restart-game.ps1"
+      ],
+      "stack": [
+        "pwsh ./scripts/ndk-stack.ps1 $0:?"
+      ],
+      "tomb": [
+        "pwsh ./scripts/pull-tombstone.ps1 -analyze"
+      ]
+    },
+    "qmodIncludeDirs": [],
+    "qmodIncludeFiles": [],
+    "qmodOutput": null
+  },
   "dependencies": [
     {
       "id": "beatsaber-hook",
-      "versionRange": "^3.14.0",
+      "versionRange": "^5.1.6",
       "additionalData": {
         "extraFiles": [
           "src/inline-hook"
@@ -21,25 +52,36 @@
       }
     },
     {
-      "id": "questui",
-      "versionRange": "^0.17.3",
+      "id": "scotland2",
+      "versionRange": "^0.1.4",
+      "additionalData": {
+        "includeQmod": false
+      }
+    },
+    {
+      "id": "bs-cordl",
+      "versionRange": "^3601.0.0",
+      "additionalData": {}
+    },
+    {
+      "id": "paper",
+      "versionRange": "^3.6.3",
+      "additionalData": {}
+    },
+    {
+      "id": "bsml",
+      "versionRange": "^0.4.29",
       "additionalData": {}
     },
     {
       "id": "custom-types",
-      "versionRange": "^0.15.21",
+      "versionRange": "^0.17.7",
       "additionalData": {}
     },
     {
       "id": "rapidjson-macros",
-      "versionRange": "^0.4.6",
-      "additionalData": {}
-    },
-    {
-      "id": "codegen",
-      "versionRange": "^0.33.0",
+      "versionRange": "^1.2.1",
       "additionalData": {}
     }
-  ],
-  "workspace": null
+  ]
 }

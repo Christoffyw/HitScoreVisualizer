@@ -1,10 +1,10 @@
 #pragma once
 
-#include <vector>
-#include <string>
 #include <numeric>
-#include <unordered_map>
 #include <sstream>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 // Create a setNAME method that reads from the name##Tokens field and sets all tokens listed.
 #define __SET_TOKEN(name) \
@@ -19,10 +19,10 @@ auto get_##name##Tokens_size() { \
 }
 
 class TokenizedText {
-    public:
+   public:
     TokenizedText() = default;
-    bool operator==(const TokenizedText&) const = default;
-    
+    bool operator==(TokenizedText const&) const = default;
+
     TokenizedText(std::string str) {
         original = str;
         // Parse the string into tokens, converting the string back is easy.
@@ -105,27 +105,21 @@ class TokenizedText {
         }
     }
 
-    std::string Raw() {
-        return original;
-    }
+    std::string Raw() { return original; }
     // Get the token-joined string from creation of this
     std::string Join() {
         if (!textValid) {
             textValid = true;
             text = std::string();
-            for (const auto &piece : tokens)
+            for (auto const& piece : tokens)
                 text += piece;
         }
         return text;
     }
 
-    void invalidate_text() {
-        textValid = false;
-    }
+    void invalidate_text() { textValid = false; }
 
-    bool is_text_valid() {
-        return textValid;
-    }
+    bool is_text_valid() { return textValid; }
 
     __SET_TOKEN(beforeCut)
     __SET_TOKEN(accuracy)
@@ -141,12 +135,12 @@ class TokenizedText {
     std::string original;
     std::vector<std::string> tokens;
 
-    private:
+   private:
     // Is cached text valid? Should be invalidated on tokens change
     bool textValid = false;
     // Cached text, should be invalidated on tokens change
     std::string text;
-    
+
     std::vector<int> beforeCutTokens;
     std::vector<int> accuracyTokens;
     std::vector<int> afterCutTokens;

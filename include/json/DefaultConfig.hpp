@@ -2,184 +2,176 @@
 
 #include <string>
 
-static const std::string defaultConfigName = "HitScoreVisualizerConfig (default).json";
+static std::string const defaultConfigName = "HitScoreVisualizerConfig (default).json";
 
-static const std::string defaultConfigText = "{"
-"  \"isDefaultConfig\": true,"
-"  \"judgments\": ["
-"    {"
-"      \"threshold\": 115,"
-"      \"text\": \"%BFantastic%A%n%s\","
-"      \"color\": ["
-"        1.0,"
-"        1.0,"
-"        1.0,"
-"        1.0"
-"      ],"
-"      \"fade\": false"
-"    },"
-"    {"
-"      \"threshold\": 101,"
-"      \"text\": \"<size=80%>%BExcellent%A</size>%n%s\","
-"      \"color\": ["
-"        0.0,"
-"        1.0,"
-"        0.0,"
-"        1.0"
-"      ],"
-"      \"fade\": false"
-"    },"
-"    {"
-"      \"threshold\": 90,"
-"      \"text\": \"<size=80%>%BGreat%A</size>%n%s\","
-"      \"color\": ["
-"        1.0,"
-"        0.980392158,"
-"        0.0,"
-"        1.0"
-"      ],"
-"      \"fade\": false"
-"    },"
-"    {"
-"      \"threshold\": 80,"
-"      \"text\": \"<size=80%>%BGood%A</size>%n%s\","
-"      \"color\": ["
-"        1.0,"
-"        0.6,"
-"        0.0,"
-"        1.0"
-"      ],"
-"      \"fade\": true"
-"    },"
-"    {"
-"      \"threshold\": 60,"
-"      \"text\": \"<size=80%>%BDecent%A</size>%n%s\","
-"      \"color\": ["
-"        1.0,"
-"        0.0,"
-"        0.0,"
-"        1.0"
-"      ],"
-"      \"fade\": true"
-"    },"
-"    {"
-"      \"threshold\": 0,"
-"      \"text\": \"<size=80%>%BWay Off%A</size>%n%s\","
-"      \"color\": ["
-"        0.5,"
-"        0.0,"
-"        0.0,"
-"        1.0"
-"      ],"
-"      \"fade\": true"
-"    }"
-"  ],"
-"  \"beforeCutAngleJudgments\": ["
-"    {"
-"      \"threshold\": 70,"
-"      \"text\": \" + \""
-"    },"
-"    {"
-"      \"threshold\": 0,"
-"      \"text\": \" \""
-"    }"
-"  ],"
-"  \"accuracyJudgments\": ["
-"    {"
-"      \"threshold\": 15,"
-"      \"text\": \" + \""
-"    },"
-"    {"
-"      \"threshold\": 0,"
-"      \"text\": \" \""
-"    }"
-"  ],"
-"  \"afterCutAngleJudgments\": ["
-"    {"
-"      \"threshold\": 30,"
-"      \"text\": \" + \""
-"    },"
-"    {"
-"      \"threshold\": 0,"
-"      \"text\": \" \""
-"    }"
-"  ],"
-"  \"chainHeadJudgments\": ["
-"    {"
-"      \"threshold\": 85,"
-"      \"text\": \"%BFantastic%B%n%s\","
-"      \"color\": ["
-"         1,"
-"         1,"
-"         1,"
-"         1"
-"       ],"
-"       \"fade\": false"
-"    },"
-"    {"
-"      \"threshold\": 71,"
-"      \"text\": \"<size=80%>%BExcellent%B</size>%n%s\","
-"      \"color\": ["
-"         0,"
-"         1,"
-"         0,"
-"         1"
-"       ],"
-"       \"fade\": false"
-"    },"
-"    {"
-"      \"threshold\": 60,"
-"      \"text\": \"<size=80%>%BGreat%B</size>%n%s\","
-"      \"color\": ["
-"         1,"
-"         0.980392158,"
-"         0,"
-"         1"
-"       ],"
-"       \"fade\": false"
-"    },"
-"    {"
-"      \"threshold\": 50,"
-"      \"text\": \"<size=80%>%BGood%B</size>%n%s\","
-"      \"color\": ["
-"         1,"
-"         0.6,"
-"         0,"
-"         1"
-"       ],"
-"       \"fade\": true"
-"    },"
-"    {"
-"      \"threshold\": 30,"
-"      \"text\": \"<size=80%>%BDecent%B</size>%n%s\","
-"      \"color\": ["
-"         1,"
-"         0,"
-"         0,"
-"         1"
-"       ],"
-"       \"fade\": true"
-"    },"
-"    {"
-"      \"threshold\": 0,"
-"      \"text\": \"<size=80%>%BWay Off%B</size>%n%s\","
-"      \"color\": ["
-"         0.5,"
-"         0,"
-"         0,"
-"         1"
-"       ],"
-"       \"fade\": true"
-"    }"
-"  ],"
-"  \"chainLinkDisplay\": {"
-"    \"text\": \" + %s + \","
-"    \"color\": ["
-"      0,"
-"      1,"
-"      0,"
-"      1"
-"    ]"
-"  },"
-"  \"timeDependencyJudgments\": null"
-"}";
+static std::string const defaultConfigText = R"(
+{
+  "defaultConfigVersion": 1,
+  "isDefaultConfig": true,
+  "judgments": [
+    {
+      "threshold": 115,
+      "text": "<size=150%><u>%s</u></size>",
+      "color": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "threshold": 110,
+      "text": "%B<size=120%>%C%s</u></size>%A",
+      "color": [
+        0.0,
+        0.5,
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "threshold": 105,
+      "text": "%B%C%s</u>%A",
+      "color": [
+        0.0,
+        1.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "threshold": 100,
+      "text": "%B%C%s</u>%A",
+      "color": [
+        1.0,
+        1.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "threshold": 50,
+      "text": "%B<size=80%>%s</size>%A",
+      "color": [
+        1.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "fade": true
+    },
+    {
+      "threshold": 0,
+      "text": "%B<size=80%>%s</size>%A",
+      "color": [
+        1.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    }
+  ],
+  "chainHeadJudgments": [
+    {
+      "threshold": 85,
+      "text": "<size=150%><u>%s</u></size>",
+      "color": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "threshold": 80,
+      "text": "%B<size=120%>%C%s</u></size>%A",
+      "color": [
+        0.0,
+        0.5,
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "threshold": 75,
+      "text": "%B%C%s</u>%A",
+      "color": [
+        0.0,
+        1.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "threshold": 70,
+      "text": "%B%C%s</u>%A",
+      "color": [
+        1.0,
+        1.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "threshold": 35,
+      "text": "%B<size=80%>%s</size>%A",
+      "color": [
+        1.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "fade": true
+    },
+    {
+      "threshold": 0,
+      "text": "%B<size=80%>%s</size>%A",
+      "color": [
+        1.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    }
+  ],
+  "chainLinkDisplay": {
+    "text": "%s",
+    "color": [
+      1.0,
+      1.0,
+      1.0,
+      1.0
+    ]
+  },
+  "beforeCutAngleJudgments": [
+    {
+      "threshold": 70,
+      "text": " + "
+    },
+    {
+      "threshold": 0,
+      "text": "<color=#ff4f4f> - </color>"
+    }
+  ],
+  "accuracyJudgments": [
+    {
+      "threshold": 15,
+      "text": "<u>"
+    },
+    {
+      "threshold": 0,
+      "text": ""
+    }
+  ],
+  "afterCutAngleJudgments": [
+    {
+      "threshold": 30,
+      "text": " + "
+    },
+    {
+      "threshold": 0,
+      "text": "<color=#ff4f4f> - </color>"
+    }
+  ]
+}
+)";

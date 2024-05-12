@@ -1,20 +1,30 @@
 #pragma once
 
 #include "TokenizedText.hpp"
-#include "rapidjson-macros/shared/macros.hpp"
-
 #include "UnityEngine/Color.hpp"
 #include "UnityEngine/Vector3.hpp"
+#include "rapidjson-macros/shared/macros.hpp"
 
 namespace HSV {
-
-    class FlexibleFloat : public TypeOptions<int, float> {
-        public: operator float() const {
-            if(auto v = GetValue<float>())
+    struct FlexibleFloat : TypeOptions<int, float> {
+        operator float() const {
+            if (auto v = GetValue<float>())
                 return *v;
             return *GetValue<int>();
         }
         using TypeOptions<int, float>::TypeOptions;
+    };
+
+    // why cordl why
+    struct EquatableColor : UnityEngine::Color {
+        bool operator==(EquatableColor const& rhs) const { return r == rhs.r && g == rhs.g && b == rhs.b && a == rhs.a; };
+        EquatableColor(UnityEngine::Color const& rhs) : UnityEngine::Color(rhs) {}
+        EquatableColor() = default;
+    };
+    struct EquatableVec3 : UnityEngine::Vector3 {
+        bool operator==(EquatableVec3 const& rhs) const { return x == rhs.x && y == rhs.y && z == rhs.z; };
+        EquatableVec3(UnityEngine::Vector3 const& rhs) : UnityEngine::Vector3(rhs) {}
+        EquatableVec3() = default;
     };
 
     DECLARE_JSON_CLASS(Vector3,
@@ -32,9 +42,9 @@ namespace HSV {
             self->Text = TokenizedText(self->UnprocessedText);
             self->Color = UnityEngine::Color(self->UnprocessedColor[0], self->UnprocessedColor[1], self->UnprocessedColor[2], self->UnprocessedColor[3]);
         )
-        public:
+       public:
         TokenizedText Text;
-        UnityEngine::Color Color;
+        EquatableColor Color;
     )
 
     DECLARE_JSON_CLASS(Segment,
@@ -48,22 +58,27 @@ namespace HSV {
     )
 
     DECLARE_JSON_CLASS(Config,
+        NAMED_VALUE_OPTIONAL(int, DefaultVersion, "defaultConfigVersion");
         NAMED_VALUE_DEFAULT(bool, IsDefault, false, "isDefaultConfig");
+        DESERIALIZE_ACTION(UpgradeDefault,
+            if (self->IsDefault && (!self->DefaultVersion || self->DefaultVersion.value() < 1))
+                throw JSONException("default config was older default version");
+        )
         NAMED_VECTOR(Judgement, Judgements, "judgments");
-        DESERIALIZE_ACTION(0,
-            if(self->Judgements.size() < 1)
+        DESERIALIZE_ACTION(NeedsJudgements,
+            if (self->Judgements.size() < 1)
                 throw JSONException("no judgements found in config");
         )
         NAMED_VECTOR_DEFAULT(Judgement, ChainHeadJudgements, {}, "chainHeadJudgments");
-        DESERIALIZE_ACTION(1,
+        DESERIALIZE_ACTION(NeedsChainHeads,
             self->HasChainHead = self->ChainHeadJudgements.size() > 0;
-            if(self->IsDefault && !self->HasChainHead)
+            if (self->IsDefault && !self->HasChainHead)
                 throw JSONException("default config did not contain chain head judgements");
         )
         NAMED_VALUE_OPTIONAL(Judgement, ChainLinkDisplay, "chainLinkDisplay");
-        DESERIALIZE_ACTION(2,
+        DESERIALIZE_ACTION(NeedsChainLinks,
             self->HasChainLink = self->ChainLinkDisplay.has_value();
-            if(self->IsDefault && !self->HasChainLink)
+            if (self->IsDefault && !self->HasChainLink)
                 throw JSONException("default config did not contain chain link judgement");
         )
         NAMED_VECTOR_DEFAULT(Segment, BeforeCutAngleSegments, {}, "beforeCutAngleJudgments");
@@ -76,19 +91,19 @@ namespace HSV {
         NAMED_VALUE_OPTIONAL(bool, UseFixedPos, "useFixedPos");
         NAMED_VALUE_OPTIONAL(Vector3, UnprocessedFixedPos, "fixedPosition");
         NAMED_VALUE_OPTIONAL(Vector3, UnprocessedPosOffset, "targetPositionOffset");
-        DESERIALIZE_ACTION(3,
-            if(self->UseFixedPos.has_value() && self->UseFixedPos.value())
+        DESERIALIZE_ACTION(ConvertPositions,
+            if (self->UseFixedPos.has_value() && self->UseFixedPos.value())
                 self->FixedPos = UnityEngine::Vector3(self->FixedPosX.value_or(0), self->FixedPosY.value_or(0), self->FixedPosZ.value_or(0));
-            else if(self->UnprocessedFixedPos.has_value())
+            else if (self->UnprocessedFixedPos.has_value())
                 self->FixedPos = UnityEngine::Vector3(self->UnprocessedFixedPos->X, self->UnprocessedFixedPos->Y, self->UnprocessedFixedPos->Z);
-            if(self->UnprocessedPosOffset)
+            if (self->UnprocessedPosOffset)
                 self->PosOffset = UnityEngine::Vector3(self->UnprocessedPosOffset->X, self->UnprocessedPosOffset->Y, self->UnprocessedPosOffset->Z);
         )
         NAMED_VALUE_DEFAULT(int, TimeDependenceDecimalPrecision, 1, "timeDependencyDecimalPrecision");
         NAMED_VALUE_DEFAULT(int, TimeDependenceDecimalOffset, 2, "timeDependencyDecimalOffset");
-        public:
-        std::optional<UnityEngine::Vector3> FixedPos;
-        std::optional<UnityEngine::Vector3> PosOffset;
+       public:
+        std::optional<EquatableVec3> FixedPos;
+        std::optional<EquatableVec3> PosOffset;
         bool HasChainHead;
         bool HasChainLink;
     )
@@ -97,7 +112,7 @@ namespace HSV {
         NAMED_VALUE_DEFAULT(bool, ModEnabled, true, "isEnabled");
         NAMED_VALUE_DEFAULT(std::string, SelectedConfig, "", "selectedConfig");
         NAMED_VALUE_DEFAULT(bool, HideUntilDone, false, "hideUntilCalculated");
-        public:
+       public:
         std::optional<Config> CurrentConfig = std::nullopt;
 
         bool GetActive() { return ModEnabled && CurrentConfig.has_value(); }

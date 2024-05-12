@@ -1,18 +1,16 @@
 #pragma once
 
-#include "GlobalNamespace/SimpleTextTableCell.hpp"
-
-#include "UnityEngine/UI/Toggle.hpp"
-#include "TMPro/TextMeshProUGUI.hpp"
-#include "HMUI/ViewController.hpp"
-#include "HMUI/TableCell.hpp"
-#include "HMUI/TableView_IDataSource.hpp"
-
-#include "custom-types/shared/macros.hpp"
-
 #include <map>
 
-___DECLARE_TYPE_WRAPPER_INHERITANCE(HSV, CustomList, Il2CppTypeEnum::IL2CPP_TYPE_CLASS, UnityEngine::MonoBehaviour, "HSV", { classof(HMUI::TableView::IDataSource*) }, 0, nullptr,
+#include "GlobalNamespace/SimpleTextTableCell.hpp"
+#include "HMUI/TableCell.hpp"
+#include "HMUI/TableView.hpp"
+#include "HMUI/ViewController.hpp"
+#include "TMPro/TextMeshProUGUI.hpp"
+#include "bsml/shared/BSML/Components/Settings/ToggleSetting.hpp"
+#include "custom-types/shared/macros.hpp"
+
+DECLARE_CLASS_CODEGEN_INTERFACES(HSV, CustomList, UnityEngine::MonoBehaviour, classof(HMUI::TableView::IDataSource*),
 
     DECLARE_INSTANCE_FIELD(GlobalNamespace::SimpleTextTableCell*, simpleTextTableCellInstance);
 
@@ -22,31 +20,32 @@ ___DECLARE_TYPE_WRAPPER_INHERITANCE(HSV, CustomList, Il2CppTypeEnum::IL2CPP_TYPE
     DECLARE_INSTANCE_FIELD(bool, expandCell);
 
     DECLARE_CTOR(ctor);
-    
-    DECLARE_OVERRIDE_METHOD(HMUI::TableCell*, CellForIdx, il2cpp_utils::il2cpp_type_check::MetadataGetter<&HMUI::TableView::IDataSource::CellForIdx>::get(), HMUI::TableView* tableView, int idx);
-    DECLARE_OVERRIDE_METHOD(float, CellSize, il2cpp_utils::il2cpp_type_check::MetadataGetter<&HMUI::TableView::IDataSource::CellSize>::get());
-    DECLARE_OVERRIDE_METHOD(int, NumberOfCells, il2cpp_utils::il2cpp_type_check::MetadataGetter<&HMUI::TableView::IDataSource::NumberOfCells>::get());
 
-    public:
+    DECLARE_OVERRIDE_METHOD_MATCH(HMUI::TableCell*, CellForIdx, &HMUI::TableView::IDataSource::CellForIdx, HMUI::TableView* tableView, int idx);
+    DECLARE_OVERRIDE_METHOD_MATCH(float, CellSize, &HMUI::TableView::IDataSource::CellSize);
+    DECLARE_OVERRIDE_METHOD_MATCH(int, NumberOfCells, &HMUI::TableView::IDataSource::NumberOfCells);
+
+   public:
     std::vector<std::string> data;
     std::map<int, std::string> failures;
 )
 
 DECLARE_CLASS_CODEGEN(HSV, SettingsViewController, HMUI::ViewController,
 
-    UnityEngine::UI::Toggle* enabledToggle;
-    UnityEngine::UI::Toggle* hideToggle;
-    TMPro::TextMeshProUGUI* selectedConfig;
-    HSV::CustomList* configList;
-    
-    static std::vector<std::string> fullConfigPaths;
-    static int selectedIdx;
-
-    void ConfigSelected(int idx);
-    void RefreshConfigList();
-    void RefreshUI();
-
     DECLARE_DEFAULT_CTOR();
 
-    DECLARE_OVERRIDE_METHOD(void, DidActivate, il2cpp_utils::il2cpp_type_check::MetadataGetter<&HMUI::ViewController::DidActivate>::get(), bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling);
+    DECLARE_INSTANCE_FIELD(BSML::ToggleSetting*, enabledToggle);
+    DECLARE_INSTANCE_FIELD(BSML::ToggleSetting*, hideToggle);
+    DECLARE_INSTANCE_FIELD(TMPro::TextMeshProUGUI*, selectedConfig);
+    DECLARE_INSTANCE_FIELD(HSV::CustomList*, configList);
+
+    DECLARE_INSTANCE_METHOD(void, ConfigSelected, int idx);
+    DECLARE_INSTANCE_METHOD(void, RefreshConfigList);
+    DECLARE_INSTANCE_METHOD(void, RefreshUI);
+
+    DECLARE_OVERRIDE_METHOD_MATCH(void, DidActivate, &HMUI::ViewController::DidActivate, bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling);
+
+   private:
+    static std::vector<std::string> fullConfigPaths;
+    static int selectedIdx;
 )

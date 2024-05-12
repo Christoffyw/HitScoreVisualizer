@@ -1,35 +1,19 @@
 #include "Main.hpp"
+
+#include "GlobalNamespace/BeatmapObjectExecutionRating.hpp"
+#include "GlobalNamespace/FlyingScoreEffect.hpp"
+#include "GlobalNamespace/FlyingScoreSpawner.hpp"
+#include "GlobalNamespace/IReadonlyCutScoreBuffer.hpp"
+#include "GlobalNamespace/NoteData.hpp"
 #include "Settings.hpp"
-#include "json/Config.hpp"
+#include "TMPro/TextMeshPro.hpp"
+#include "UnityEngine/AnimationCurve.hpp"
+#include "UnityEngine/SpriteRenderer.hpp"
+#include "beatsaber-hook/shared/config/config-utils.hpp"
+#include "bsml/shared/BSML.hpp"
 #include "json/DefaultConfig.hpp"
 
-#include "GlobalNamespace/CutScoreBuffer.hpp"
-#include "GlobalNamespace/IReadonlyCutScoreBuffer.hpp"
-#include "GlobalNamespace/BeatmapObjectExecutionRating.hpp"
-#include "GlobalNamespace/FlyingScoreEffect_Pool.hpp"
-#include "GlobalNamespace/FlyingScoreSpawner.hpp"
-
-#include "TMPro/TextMeshPro.hpp"
-
-#include "UnityEngine/AnimationCurve.hpp"
-#include "UnityEngine/Quaternion.hpp"
-#include "UnityEngine/SpriteRenderer.hpp"
-#include "UnityEngine/GameObject.hpp"
-#include "UnityEngine/Transform.hpp"
-
-#include "questui/shared/QuestUI.hpp"
-
-#include <filesystem>
-
-using namespace GlobalNamespace;
-using namespace HSV;
-
-static ModInfo modInfo;
-
-Logger& getLogger() {
-    static Logger* logger = new Logger(modInfo);
-    return *logger;
-}
+static modloader::ModInfo modInfo = {MOD_ID, VERSION, 0};
 
 std::string GlobalConfigPath() {
     static std::string path = Configuration::getConfigFilePath(modInfo);
@@ -42,94 +26,108 @@ std::string ConfigsPath() {
 }
 
 bool LoadCurrentConfig() {
-    if(!fileexists(globalConfig.SelectedConfig)) {
-        LOG_ERROR("Could not find selected config!");
+    if (!fileexists(globalConfig.SelectedConfig)) {
+        logger.warn("Could not find selected config!");
         writefile(ConfigsPath() + defaultConfigName, defaultConfigText);
         globalConfig.SelectedConfig = ConfigsPath() + defaultConfigName;
         WriteToFile(GlobalConfigPath(), globalConfig);
     }
-    Config config;
+    HSV::Config config;
     bool retry = false;
     do {
         try {
             ReadFromFile(globalConfig.SelectedConfig, config);
             globalConfig.CurrentConfig = config;
             return true;
-        } catch(const std::exception& err) {
-            LOG_ERROR("Could not load config file %s: %s", globalConfig.SelectedConfig.c_str(), err.what());
-            if(config.IsDefault) {
+        } catch (std::exception const& err) {
+            logger.error("Could not load config file {}: {}", globalConfig.SelectedConfig, err.what());
+            if (config.IsDefault) {
                 writefile(globalConfig.SelectedConfig, defaultConfigText);
                 retry = !retry;
             } else
                 return false;
         }
-    } while(retry);
+    } while (retry);
     return false;
 }
 
 // global config
-GlobalConfig globalConfig{};
+HSV::GlobalConfig globalConfig{};
 // used for fixed position
-FlyingScoreEffect* currentEffect = nullptr;
+GlobalNamespace::FlyingScoreEffect* currentEffect = nullptr;
 // used for updating ratings
-std::unordered_map<IReadonlyCutScoreBuffer*, FlyingScoreEffect*> swingRatingMap = {};
+std::unordered_map<GlobalNamespace::IReadonlyCutScoreBuffer*, GlobalNamespace::FlyingScoreEffect*> swingRatingMap = {};
 
-MAKE_HOOK_MATCH(InitFlyingScoreEffect, &FlyingScoreEffect::InitAndPresent,
-        void, FlyingScoreEffect* self, IReadonlyCutScoreBuffer* cutScoreBuffer, float duration, UnityEngine::Vector3 targetPos, UnityEngine::Color color) {
-
-    if(globalConfig.GetActive()) {
-        if(globalConfig.CurrentConfig->FixedPos) {
+MAKE_HOOK_MATCH(
+    FlyingScoreEffect_InitAndPresent,
+    &GlobalNamespace::FlyingScoreEffect::InitAndPresent,
+    void,
+    GlobalNamespace::FlyingScoreEffect* self,
+    GlobalNamespace::IReadonlyCutScoreBuffer* cutScoreBuffer,
+    float duration,
+    UnityEngine::Vector3 targetPos,
+    UnityEngine::Color color
+) {
+    if (globalConfig.GetActive()) {
+        if (globalConfig.CurrentConfig->FixedPos) {
             targetPos = globalConfig.CurrentConfig->FixedPos.value();
-            self->get_transform()->set_position(targetPos);
-            if(!globalConfig.HideUntilDone) {
-                if(currentEffect)
-                    currentEffect->get_gameObject()->SetActive(false);
+            self->transform->position = targetPos;
+            if (!globalConfig.HideUntilDone) {
+                if (currentEffect)
+                    currentEffect->gameObject->active = false;
                 currentEffect = self;
             }
-        } else if(globalConfig.CurrentConfig->PosOffset) {
-            targetPos = targetPos + globalConfig.CurrentConfig->PosOffset.value();
+        } else if (globalConfig.CurrentConfig->PosOffset) {
+            targetPos = UnityEngine::Vector3::op_Addition(targetPos, globalConfig.CurrentConfig->PosOffset.value());
         }
     }
-    InitFlyingScoreEffect(self, cutScoreBuffer, duration, targetPos, color);
+    FlyingScoreEffect_InitAndPresent(self, cutScoreBuffer, duration, targetPos, color);
 
-    if(globalConfig.GetActive()) {
-        if(cutScoreBuffer == nullptr) {
-            LOG_ERROR("CutScoreBuffer is null");
+    if (globalConfig.GetActive()) {
+        if (cutScoreBuffer == nullptr) {
+            logger.error("CutScoreBuffer is null!");
             return;
         }
-        auto noteCutInfo = cutScoreBuffer->get_noteCutInfo();
-        if(noteCutInfo.noteData->scoringType == NoteData::ScoringType::BurstSliderHead && !globalConfig.CurrentConfig->HasChainHead)
+        auto noteCutInfo = cutScoreBuffer->noteCutInfo;
+        if (noteCutInfo.noteData->scoringType == GlobalNamespace::NoteData::ScoringType::BurstSliderHead && !globalConfig.CurrentConfig->HasChainHead)
             return;
-        if(noteCutInfo.noteData->scoringType == NoteData::ScoringType::BurstSliderElement && !globalConfig.CurrentConfig->HasChainLink)
+        if (noteCutInfo.noteData->scoringType == GlobalNamespace::NoteData::ScoringType::BurstSliderElement &&
+            !globalConfig.CurrentConfig->HasChainLink)
             return;
 
-        if(!cutScoreBuffer->get_isFinished())
-            swingRatingMap.insert({self->cutScoreBuffer, self});
+        if (!cutScoreBuffer->isFinished)
+            swingRatingMap.insert({self->_cutScoreBuffer, self});
 
-        self->maxCutDistanceScoreIndicator->set_enabled(false);
-        self->text->set_richText(true);
-        self->text->set_enableWordWrapping(false);
-        self->text->set_overflowMode(TMPro::TextOverflowModes::Overflow);
+        self->_maxCutDistanceScoreIndicator->enabled = false;
+        self->_text->richText = true;
+        self->_text->enableWordWrapping = false;
+        self->_text->overflowMode = TMPro::TextOverflowModes::Overflow;
 
-        Judge((CutScoreBuffer*) cutScoreBuffer, self, noteCutInfo);
+        Judge((GlobalNamespace::CutScoreBuffer*) cutScoreBuffer, self, noteCutInfo);
     }
 }
 
-MAKE_HOOK_MATCH(HandleSwingChange, &CutScoreBuffer::HandleSaberSwingRatingCounterDidChange,
-        void, CutScoreBuffer* self, ISaberSwingRatingCounter* swingRatingCounter, float rating) {
+MAKE_HOOK_MATCH(
+    CutScoreBuffer_HandleSaberSwingRatingCounterDidChange,
+    &GlobalNamespace::CutScoreBuffer::HandleSaberSwingRatingCounterDidChange,
+    void,
+    GlobalNamespace::CutScoreBuffer* self,
+    GlobalNamespace::ISaberSwingRatingCounter* swingRatingCounter,
+    float rating
+) {
+    CutScoreBuffer_HandleSaberSwingRatingCounterDidChange(self, swingRatingCounter, rating);
 
-    HandleSwingChange(self, swingRatingCounter, rating);
-
-    if(globalConfig.GetActive()) {
-        auto noteCutInfo = self->get_noteCutInfo();
-        if(noteCutInfo.noteData->scoringType == NoteData::ScoringType::BurstSliderHead && !globalConfig.CurrentConfig->HasChainHead)
+    if (globalConfig.GetActive()) {
+        auto noteCutInfo = self->noteCutInfo;
+        if (noteCutInfo.noteData->scoringType == GlobalNamespace::NoteData::ScoringType::BurstSliderHead && !globalConfig.CurrentConfig->HasChainHead)
             return;
-        if(noteCutInfo.noteData->scoringType == NoteData::ScoringType::BurstSliderElement && !globalConfig.CurrentConfig->HasChainLink)
+        if (noteCutInfo.noteData->scoringType == GlobalNamespace::NoteData::ScoringType::BurstSliderElement &&
+            !globalConfig.CurrentConfig->HasChainLink)
             return;
 
-        auto itr = swingRatingMap.find((IReadonlyCutScoreBuffer*) self);
-        if(itr == swingRatingMap.end()) {
-            LOG_ERROR("Counter was not found in swingRatingMap!");
+        auto itr = swingRatingMap.find((GlobalNamespace::IReadonlyCutScoreBuffer*) self);
+        if (itr == swingRatingMap.end()) {
+            logger.error("Counter was not found in swingRatingMap!");
             return;
         }
         auto& flyingScoreEffect = itr->second;
@@ -138,21 +136,26 @@ MAKE_HOOK_MATCH(HandleSwingChange, &CutScoreBuffer::HandleSaberSwingRatingCounte
     }
 }
 
-MAKE_HOOK_MATCH(HandleSwingFinish, &CutScoreBuffer::HandleSaberSwingRatingCounterDidFinish,
-        void, CutScoreBuffer* self, ISaberSwingRatingCounter* swingRatingCounter) {
+MAKE_HOOK_MATCH(
+    CutScoreBuffer_HandleSaberSwingRatingCounterDidFinish,
+    &GlobalNamespace::CutScoreBuffer::HandleSaberSwingRatingCounterDidFinish,
+    void,
+    GlobalNamespace::CutScoreBuffer* self,
+    GlobalNamespace::ISaberSwingRatingCounter* swingRatingCounter
+) {
+    CutScoreBuffer_HandleSaberSwingRatingCounterDidFinish(self, swingRatingCounter);
 
-    HandleSwingFinish(self, swingRatingCounter);
-
-    if(globalConfig.GetActive()) {
-        auto noteCutInfo = self->get_noteCutInfo();
-        if(noteCutInfo.noteData->scoringType == NoteData::ScoringType::BurstSliderHead && !globalConfig.CurrentConfig->HasChainHead)
+    if (globalConfig.GetActive()) {
+        auto noteCutInfo = self->noteCutInfo;
+        if (noteCutInfo.noteData->scoringType == GlobalNamespace::NoteData::ScoringType::BurstSliderHead && !globalConfig.CurrentConfig->HasChainHead)
             return;
-        if(noteCutInfo.noteData->scoringType == NoteData::ScoringType::BurstSliderElement && !globalConfig.CurrentConfig->HasChainLink)
+        if (noteCutInfo.noteData->scoringType == GlobalNamespace::NoteData::ScoringType::BurstSliderElement &&
+            !globalConfig.CurrentConfig->HasChainLink)
             return;
 
-        auto itr = swingRatingMap.find((IReadonlyCutScoreBuffer*) self);
-        if(itr == swingRatingMap.end()) {
-            LOG_ERROR("Counter was not found in swingRatingMap!");
+        auto itr = swingRatingMap.find((GlobalNamespace::IReadonlyCutScoreBuffer*) self);
+        if (itr == swingRatingMap.end()) {
+            logger.error("Counter was not found in swingRatingMap!");
             return;
         }
         auto flyingScoreEffect = itr->second;
@@ -160,73 +163,79 @@ MAKE_HOOK_MATCH(HandleSwingFinish, &CutScoreBuffer::HandleSaberSwingRatingCounte
 
         Judge(self, flyingScoreEffect, noteCutInfo);
 
-        if(globalConfig.CurrentConfig->FixedPos && globalConfig.HideUntilDone) {
-            if(currentEffect)
-                currentEffect->get_gameObject()->SetActive(false);
+        if (globalConfig.CurrentConfig->FixedPos && globalConfig.HideUntilDone) {
+            if (currentEffect)
+                currentEffect->gameObject->active = false;
             currentEffect = flyingScoreEffect;
         }
     }
 }
 
-MAKE_HOOK_MATCH(FlyingScoreEffectFinish, &FlyingScoreSpawner::HandleFlyingObjectEffectDidFinish, void, FlyingScoreSpawner* self, FlyingObjectEffect* effect) {
+MAKE_HOOK_MATCH(
+    FlyingScoreSpawner_HandleFlyingObjectEffectDidFinish,
+    &GlobalNamespace::FlyingScoreSpawner::HandleFlyingObjectEffectDidFinish,
+    void,
+    GlobalNamespace::FlyingScoreSpawner* self,
+    GlobalNamespace::FlyingObjectEffect* effect
+) {
 
-    if(currentEffect == (FlyingScoreEffect*) effect) {
-        currentEffect->get_gameObject()->SetActive(false);
+    if (currentEffect == (GlobalNamespace::FlyingScoreEffect*) effect) {
+        currentEffect->gameObject->active = false;
         currentEffect = nullptr;
     }
-    FlyingScoreEffectFinish(self, effect);
+    FlyingScoreSpawner_HandleFlyingObjectEffectDidFinish(self, effect);
 }
 
-MAKE_HOOK_MATCH(FlyingScoreEffectManualUpdate, &FlyingScoreEffect::ManualUpdate,
-        void, FlyingScoreEffect* self, float t) {
+MAKE_HOOK_MATCH(
+    FlyingScoreEffect_ManualUpdate, &GlobalNamespace::FlyingScoreEffect::ManualUpdate, void, GlobalNamespace::FlyingScoreEffect* self, float t
+) {
+    FlyingScoreEffect_ManualUpdate(self, t);
 
-    FlyingScoreEffectManualUpdate(self, t);
-
-    if(globalConfig.GetActive()) {
-        self->color.a = self->fadeAnimationCurve->Evaluate(t);
-        self->text->set_color(self->color);
+    if (globalConfig.GetActive()) {
+        self->_color.a = self->_fadeAnimationCurve->Evaluate(t);
+        self->_text->color = self->_color;
     }
 }
 
-extern "C" void setup(ModInfo& info) {
-    info.id = ID;
-    info.version = VERSION;
-    modInfo = info;
+extern "C" void setup(CModInfo* info) {
+    *info = modInfo.to_c();
 
-    if(!direxists(ConfigsPath()))
+    Paper::Logger::RegisterFileContextId(MOD_ID);
+
+    if (!direxists(ConfigsPath()))
         mkpath(ConfigsPath());
 
     try {
-        if(!fileexists(GlobalConfigPath()))
+        if (!fileexists(GlobalConfigPath()))
             WriteToFile(GlobalConfigPath(), globalConfig);
         else
             ReadFromFile(GlobalConfigPath(), globalConfig);
-    } catch(const std::exception& err) {
-        LOG_ERROR("Error loading global config: %s", err.what());
+    } catch (std::exception const& err) {
+        logger.error("Error loading global config: {}", err.what());
     }
     // load current config, or select default
-    if(!LoadCurrentConfig()) {
-        LOG_ERROR("Failed to load selected config! Loading default instead");
+    if (!LoadCurrentConfig()) {
+        logger.error("Failed to load selected config! Loading default instead");
         writefile(ConfigsPath() + defaultConfigName, defaultConfigText);
         globalConfig.SelectedConfig = ConfigsPath() + defaultConfigName;
         WriteToFile(GlobalConfigPath(), globalConfig);
         LoadCurrentConfig();
     }
 
-    LOG_INFO("Completed setup!");
+    logger.info("Completed setup!");
 }
 
-extern "C" void load() {
+extern "C" void late_load() {
     il2cpp_functions::Init();
 
-    QuestUI::Register::RegisterModSettingsViewController<SettingsViewController*>(modInfo, "Hit Score Visualizer");
-    QuestUI::Register::RegisterMainMenuModSettingsViewController<SettingsViewController*>(modInfo, "Hit Score Visualizer");
+    BSML::Register::RegisterSettingsMenu<HSV::SettingsViewController*>("Hit Score Visualizer");
+    BSML::Register::RegisterMainMenu<HSV::SettingsViewController*>("Hit Score Visualizer", "Hit Score Visualizer", "");
 
-    LOG_INFO("Installing hooks...");
-    INSTALL_HOOK(getLogger(), InitFlyingScoreEffect);
-    INSTALL_HOOK(getLogger(), HandleSwingChange);
-    INSTALL_HOOK(getLogger(), HandleSwingFinish);
-    INSTALL_HOOK(getLogger(), FlyingScoreEffectFinish);
-    INSTALL_HOOK(getLogger(), FlyingScoreEffectManualUpdate);
-    LOG_INFO("Installed all hooks!");
+    logger.info("Installing hooks...");
+    INSTALL_HOOK(logger, FlyingScoreEffect_InitAndPresent);
+    INSTALL_HOOK(logger, CutScoreBuffer_HandleSaberSwingRatingCounterDidChange);
+    INSTALL_HOOK(logger, CutScoreBuffer_HandleSaberSwingRatingCounterDidFinish);
+    INSTALL_HOOK(logger, FlyingScoreSpawner_HandleFlyingObjectEffectDidFinish);
+    INSTALL_HOOK(logger, FlyingScoreEffect_ManualUpdate);
+    logger.info("Installed all hooks!");
 }

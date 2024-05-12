@@ -32,6 +32,7 @@
 *.app
 
 # VSCode config stuff
+.cache
 !.vscode/c_cpp_properties.json
 !.vscode/tasks.json
 !.vscode/settings.json
@@ -55,7 +56,6 @@ Android.mk.backup
 [Ee]xtern/
 *.qmod
 mod.json
-qpm.shared.json
 qpm_defines.cmake
 ![Cc][Mm]ake[Ll]ists.txt
 
@@ -63,3 +63,6 @@ qpm_defines.cmake
 [Bb]uild/
 cmake-build-*/
 extern.cmake
+
+# QMOD Schema
+mod.json.schema

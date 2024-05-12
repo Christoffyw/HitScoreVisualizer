@@ -1,25 +1,21 @@
-#include "Main.hpp"
+#include <iomanip>
+#include <sstream>
 
-#include "GlobalNamespace/ScoreModel.hpp"
-#include "GlobalNamespace/ScoreModel_NoteScoreDefinition.hpp"
-#include "GlobalNamespace/IReadonlyCutScoreBuffer.hpp"
 #include "GlobalNamespace/CutScoreBuffer.hpp"
+#include "GlobalNamespace/IReadonlyCutScoreBuffer.hpp"
+#include "GlobalNamespace/NoteData.hpp"
+#include "GlobalNamespace/ScoreModel.hpp"
+#include "Main.hpp"
 #include "System/Collections/Generic/Dictionary_2.hpp"
+#include "TMPro/TextMeshPro.hpp"
 #include "UnityEngine/Mathf.hpp"
 
-#include "TMPro/TextMeshPro.hpp"
-
-#include <sstream>
-#include <iomanip>
-#include <math.h>
-
-using namespace GlobalNamespace;
 using namespace HSV;
 
 Judgement& GetBestJudgement(std::vector<Judgement>& judgements, int comparison) {
     Judgement* best = nullptr;
-    for(auto& judgement : judgements) {
-        if(comparison >= judgement.Threshold && (!best || judgement.Threshold > best->Threshold))
+    for (auto& judgement : judgements) {
+        if (comparison >= judgement.Threshold && (!best || judgement.Threshold > best->Threshold))
             best = &judgement;
     }
     return best ? *best : judgements.back();
@@ -27,8 +23,8 @@ Judgement& GetBestJudgement(std::vector<Judgement>& judgements, int comparison) 
 
 std::string GetBestSegmentText(std::vector<Segment>& segments, int comparison) {
     Segment* best = nullptr;
-    for(auto& segment : segments) {
-        if(comparison >= segment.Threshold && (!best || segment.Threshold > best->Threshold))
+    for (auto& segment : segments) {
+        if (comparison >= segment.Threshold && (!best || segment.Threshold > best->Threshold))
             best = &segment;
     }
     return best ? best->Text : "";
@@ -36,8 +32,8 @@ std::string GetBestSegmentText(std::vector<Segment>& segments, int comparison) {
 
 std::string GetBestFloatSegmentText(std::vector<FloatSegment>& segments, float comparison) {
     FloatSegment* best = nullptr;
-    for(auto& segment : segments) {
-        if(comparison >= segment.Threshold && (!best || segment.Threshold > best->Threshold))
+    for (auto& segment : segments) {
+        if (comparison >= segment.Threshold && (!best || segment.Threshold > best->Threshold))
             best = &segment;
     }
     return best ? best->Text : "";
@@ -68,15 +64,15 @@ std::string GetJudgementText(Judgement& judgement, int score, int before, int af
 }
 
 UnityEngine::Color GetJudgementColor(Judgement& judgement, std::vector<Judgement>& judgements, int score) {
-    if(!judgement.Fade || !judgement.Fade.value())
+    if (!judgement.Fade || !judgement.Fade.value())
         return judgement.Color;
     // get the lowest judgement with a higher threshold
     Judgement* best = nullptr;
-    for(auto& judgement : judgements) {
-        if(score < judgement.Threshold && (!best || judgement.Threshold < best->Threshold))
+    for (auto& judgement : judgements) {
+        if (score < judgement.Threshold && (!best || judgement.Threshold < best->Threshold))
             best = &judgement;
     }
-    if(!best)
+    if (!best)
         return judgement.Color;
     int lowerThreshold = judgement.Threshold;
     int higherThreshold = best->Threshold;
@@ -91,18 +87,26 @@ UnityEngine::Color GetJudgementColor(Judgement& judgement, std::vector<Judgement
     );
 }
 
-void UpdateScoreEffect(FlyingScoreEffect* flyingScoreEffect, int total, int before, int after, int accuracy, float timeDependence, NoteData::ScoringType scoringType) {
+void UpdateScoreEffect(
+    GlobalNamespace::FlyingScoreEffect* flyingScoreEffect,
+    int total,
+    int before,
+    int after,
+    int accuracy,
+    float timeDependence,
+    GlobalNamespace::NoteData::ScoringType scoringType
+) {
     std::string text;
     UnityEngine::Color color;
 
-    int maxScore = ScoreModel::GetNoteScoreDefinition(scoringType)->get_maxCutScore();
+    int maxScore = GlobalNamespace::ScoreModel::GetNoteScoreDefinition(scoringType)->get_maxCutScore();
 
-    if(scoringType == NoteData::ScoringType::BurstSliderElement) {
+    if (scoringType == GlobalNamespace::NoteData::ScoringType::BurstSliderElement) {
         auto&& judgement = globalConfig.CurrentConfig->ChainLinkDisplay.value_or(GetBestJudgement(globalConfig.CurrentConfig->Judgements, total));
 
         text = GetJudgementText(judgement, total, before, after, accuracy, timeDependence, maxScore);
         color = judgement.Color;
-    } else if(scoringType == NoteData::ScoringType::BurstSliderHead) {
+    } else if (scoringType == GlobalNamespace::NoteData::ScoringType::BurstSliderHead) {
         auto& judgementVector = globalConfig.CurrentConfig->ChainHeadJudgements;
         auto& judgement = GetBestJudgement(judgementVector, total);
 
@@ -116,34 +120,36 @@ void UpdateScoreEffect(FlyingScoreEffect* flyingScoreEffect, int total, int befo
         color = GetJudgementColor(judgement, judgementVector, total);
     }
 
-    flyingScoreEffect->text->set_text(text);
-    flyingScoreEffect->text->set_color(color);
-    flyingScoreEffect->color = color;
+    flyingScoreEffect->_text->text = text;
+    flyingScoreEffect->_text->color = color;
+    flyingScoreEffect->_color = color;
 }
 
-void Judge(CutScoreBuffer* cutScoreBuffer, FlyingScoreEffect* flyingScoreEffect, NoteCutInfo& noteCutInfo) {
-    if(!cutScoreBuffer) {
-        LOG_INFO("CutScoreBuffer is null");
+void Judge(
+    GlobalNamespace::CutScoreBuffer* cutScoreBuffer, GlobalNamespace::FlyingScoreEffect* flyingScoreEffect, GlobalNamespace::NoteCutInfo& noteCutInfo
+) {
+    if (!cutScoreBuffer) {
+        logger.info("CutScoreBuffer is null");
         return;
     }
-    if(!flyingScoreEffect) {
-        LOG_INFO("FlyingScoreEffect is null");
+    if (!flyingScoreEffect) {
+        logger.info("FlyingScoreEffect is null");
         return;
     }
 
-    if(!cutScoreBuffer->get_isFinished() && globalConfig.HideUntilDone) {
-        flyingScoreEffect->text->set_text("");
+    if (!cutScoreBuffer->get_isFinished() && globalConfig.HideUntilDone) {
+        flyingScoreEffect->_text->text = "";
         return;
     }
 
     // get scores for each part of the cut
-    int before = cutScoreBuffer->get_beforeCutScore();
-    int after = cutScoreBuffer->get_afterCutScore();
-    int accuracy = cutScoreBuffer->get_centerDistanceCutScore();
-    int total = cutScoreBuffer->get_cutScore();
+    int before = cutScoreBuffer->beforeCutScore;
+    int after = cutScoreBuffer->afterCutScore;
+    int accuracy = cutScoreBuffer->centerDistanceCutScore;
+    int total = cutScoreBuffer->cutScore;
     float timeDependence = std::abs(noteCutInfo.cutNormal.z);
 
-    NoteData::ScoringType scoringType = cutScoreBuffer->get_noteCutInfo().noteData->get_scoringType();
+    GlobalNamespace::NoteData::ScoringType scoringType = cutScoreBuffer->noteCutInfo.noteData->scoringType;
 
     UpdateScoreEffect(flyingScoreEffect, total, before, after, accuracy, timeDependence, scoringType);
 }
