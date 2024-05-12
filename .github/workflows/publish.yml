@@ -49,21 +49,6 @@ jobs:
           echo libs:
           ls -la ${GITHUB_WORKSPACE}/extern/libs
 
-      - name: Cache FFMPEG
-        id: cache-ffmpeg
-        uses: actions/cache@v3
-        with:
-          path: ffmpeg
-          key: ${{ hashFiles('**/update_ffmpeg.py') }}
-
-      - name: Get FFMPEG
-        if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
-        run: |
-          cd ${GITHUB_WORKSPACE}
-          pip install PyGithub
-          pip install requests
-          python3 ./update_ffmpeg.py
-
       - name: Build & create qmod
         run: |
           cd ${GITHUB_WORKSPACE}
@@ -93,22 +78,3 @@ jobs:
             ./${{ env.qmodName }}.qmod
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: QPM Publish
-        uses: Fernthedev/qpm-action@main
-        with:
-          workflow_token: ${{ secrets.GITHUB_TOKEN }}
-
-          restore: false
-
-          eager_publish: true # Will publish the package
-          publish_token: ${{ secrets.QPM_TOKEN }} # Token required for authorization publish to qpackages.com
-          tag: v${{ github.event.inputs.version }}
-          version: "${{ github.event.inputs.version }}" # defaults to qpm-rust version, do not include v
-
-          # set to true if applicable, ASSUMES the file is already a release asset
-          qpm_release_bin: true
-          qpm_debug_bin: false
-
-          # Name of qmod in release asset. Assumes exists, same as prior
-          qpm_qmod: ${{ env.qmodName }}.qmod

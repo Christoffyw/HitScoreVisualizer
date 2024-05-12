@@ -46,21 +46,6 @@ jobs:
           echo libs:
           ls -la ${GITHUB_WORKSPACE}/extern/libs
 
-      - name: Cache FFMPEG
-        id: cache-ffmpeg
-        uses: actions/cache@v3
-        with:
-          path: ffmpeg
-          key: ${{ hashFiles('**/update_ffmpeg.py') }}
-
-      - name: Get FFMPEG
-        if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
-        run: |
-          cd ${GITHUB_WORKSPACE}
-          pip install PyGithub
-          pip install requests
-          python3 ./update_ffmpeg.py
-
       - name: Build & create qmod
         run: |
           cd ${GITHUB_WORKSPACE}
