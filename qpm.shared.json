@@ -61,7 +61,7 @@
       },
       {
         "id": "bs-cordl",
-        "versionRange": "^3601.0.0",
+        "versionRange": "^3700.0.0",
         "additionalData": {}
       },
       {
@@ -90,17 +90,17 @@
     {
       "dependency": {
         "id": "bsml",
-        "versionRange": "=0.4.29",
+        "versionRange": "=0.4.34",
         "additionalData": {
-          "soLink": "https://github.com/RedBrumbler/Quest-BSML/releases/download/v0.4.29/libbsml.so",
-          "debugSoLink": "https://github.com/RedBrumbler/Quest-BSML/releases/download/v0.4.29/debug_libbsml.so",
+          "soLink": "https://github.com/RedBrumbler/Quest-BSML/releases/download/v0.4.34/libbsml.so",
+          "debugSoLink": "https://github.com/RedBrumbler/Quest-BSML/releases/download/v0.4.34/debug_libbsml.so",
           "overrideSoName": "libbsml.so",
-          "modLink": "https://github.com/RedBrumbler/Quest-BSML/releases/download/v0.4.29/BSML.qmod",
-          "branchName": "version/v0_4_29",
+          "modLink": "https://github.com/RedBrumbler/Quest-BSML/releases/download/v0.4.34/BSML.qmod",
+          "branchName": "version/v0_4_34",
           "cmake": true
         }
       },
-      "version": "0.4.29"
+      "version": "0.4.34"
     },
     {
       "dependency": {
@@ -148,13 +148,13 @@
     {
       "dependency": {
         "id": "custom-types",
-        "versionRange": "=0.17.7",
+        "versionRange": "=0.17.8",
         "additionalData": {
-          "soLink": "https://github.com/QuestPackageManager/Il2CppQuestTypePatching/releases/download/v0.17.7/libcustom-types.so",
-          "debugSoLink": "https://github.com/QuestPackageManager/Il2CppQuestTypePatching/releases/download/v0.17.7/debug_libcustom-types.so",
+          "soLink": "https://github.com/QuestPackageManager/Il2CppQuestTypePatching/releases/download/v0.17.8/libcustom-types.so",
+          "debugSoLink": "https://github.com/QuestPackageManager/Il2CppQuestTypePatching/releases/download/v0.17.8/debug_libcustom-types.so",
           "overrideSoName": "libcustom-types.so",
-          "modLink": "https://github.com/QuestPackageManager/Il2CppQuestTypePatching/releases/download/v0.17.7/CustomTypes.qmod",
-          "branchName": "version/v0_17_7",
+          "modLink": "https://github.com/QuestPackageManager/Il2CppQuestTypePatching/releases/download/v0.17.8/CustomTypes.qmod",
+          "branchName": "version/v0_17_8",
           "compileOptions": {
             "cppFlags": [
               "-Wno-invalid-offsetof"
@@ -163,15 +163,15 @@
           "cmake": true
         }
       },
-      "version": "0.17.7"
+      "version": "0.17.8"
     },
     {
       "dependency": {
         "id": "bs-cordl",
-        "versionRange": "=3601.0.0",
+        "versionRange": "=3700.0.0",
         "additionalData": {
           "headersOnly": true,
-          "branchName": "version/v3601_0_0",
+          "branchName": "version/v3700_0_0",
           "compileOptions": {
             "includePaths": [
               "include"
@@ -186,20 +186,20 @@
           }
         }
       },
-      "version": "3601.0.0"
+      "version": "3700.0.0"
     },
     {
       "dependency": {
         "id": "beatsaber-hook",
-        "versionRange": "=5.1.6",
+        "versionRange": "=5.1.7",
         "additionalData": {
-          "soLink": "https://github.com/QuestPackageManager/beatsaber-hook/releases/download/v5.1.6/libbeatsaber-hook_5_1_6.so",
-          "debugSoLink": "https://github.com/QuestPackageManager/beatsaber-hook/releases/download/v5.1.6/debug_libbeatsaber-hook_5_1_6.so",
-          "branchName": "version/v5_1_6",
+          "soLink": "https://github.com/QuestPackageManager/beatsaber-hook/releases/download/v5.1.7/libbeatsaber-hook_5_1_7.so",
+          "debugSoLink": "https://github.com/QuestPackageManager/beatsaber-hook/releases/download/v5.1.7/debug_libbeatsaber-hook_5_1_7.so",
+          "branchName": "version/v5_1_7",
           "cmake": true
         }
       },
-      "version": "5.1.6"
+      "version": "5.1.7"
     },
     {
       "dependency": {
