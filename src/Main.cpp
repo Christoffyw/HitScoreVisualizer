@@ -56,7 +56,7 @@ HSV::GlobalConfig globalConfig{};
 // used for fixed position
 GlobalNamespace::FlyingScoreEffect* currentEffect = nullptr;
 // used for updating ratings
-std::unordered_map<GlobalNamespace::IReadonlyCutScoreBuffer*, GlobalNamespace::FlyingScoreEffect*> swingRatingMap = {};
+std::unordered_map<GlobalNamespace::CutScoreBuffer*, GlobalNamespace::FlyingScoreEffect*> swingRatingMap = {};
 
 MAKE_HOOK_MATCH(
     FlyingScoreEffect_InitAndPresent,
@@ -77,9 +77,8 @@ MAKE_HOOK_MATCH(
                     currentEffect->gameObject->active = false;
                 currentEffect = self;
             }
-        } else if (globalConfig.CurrentConfig->PosOffset) {
-            targetPos = UnityEngine::Vector3::op_Addition(targetPos, globalConfig.CurrentConfig->PosOffset.value());
-        }
+        } else if (globalConfig.CurrentConfig->PosOffset)
+            targetPos = UnityEngine::Vector3::op_Addition(targetPos, *globalConfig.CurrentConfig->PosOffset);
     }
     FlyingScoreEffect_InitAndPresent(self, cutScoreBuffer, duration, targetPos, color);
 
@@ -88,22 +87,27 @@ MAKE_HOOK_MATCH(
             logger.error("CutScoreBuffer is null!");
             return;
         }
-        auto noteCutInfo = cutScoreBuffer->noteCutInfo;
+        auto cast = il2cpp_utils::try_cast<GlobalNamespace::CutScoreBuffer>(cutScoreBuffer).value_or(nullptr);
+        if (cast == nullptr) {
+            logger.error("CutScoreBuffer is not GlobalNamespace::CutScoreBuffer!");
+            return;
+        }
+        auto noteCutInfo = cast->noteCutInfo;
         if (noteCutInfo.noteData->scoringType == GlobalNamespace::NoteData::ScoringType::BurstSliderHead && !globalConfig.CurrentConfig->HasChainHead)
             return;
         if (noteCutInfo.noteData->scoringType == GlobalNamespace::NoteData::ScoringType::BurstSliderElement &&
             !globalConfig.CurrentConfig->HasChainLink)
             return;
 
-        if (!cutScoreBuffer->isFinished)
-            swingRatingMap.insert({self->_cutScoreBuffer, self});
+        if (!cast->isFinished)
+            swingRatingMap.insert({cast, self});
 
         self->_maxCutDistanceScoreIndicator->enabled = false;
         self->_text->richText = true;
         self->_text->enableWordWrapping = false;
         self->_text->overflowMode = TMPro::TextOverflowModes::Overflow;
 
-        Judge((GlobalNamespace::CutScoreBuffer*) cutScoreBuffer, self, noteCutInfo);
+        Judge(cast, self, noteCutInfo);
     }
 }
 
@@ -125,11 +129,9 @@ MAKE_HOOK_MATCH(
             !globalConfig.CurrentConfig->HasChainLink)
             return;
 
-        auto itr = swingRatingMap.find((GlobalNamespace::IReadonlyCutScoreBuffer*) self);
-        if (itr == swingRatingMap.end()) {
-            logger.error("Counter was not found in swingRatingMap!");
+        auto itr = swingRatingMap.find(self);
+        if (itr == swingRatingMap.end())
             return;
-        }
         auto& flyingScoreEffect = itr->second;
 
         Judge(self, flyingScoreEffect, noteCutInfo);
@@ -153,11 +155,9 @@ MAKE_HOOK_MATCH(
             !globalConfig.CurrentConfig->HasChainLink)
             return;
 
-        auto itr = swingRatingMap.find((GlobalNamespace::IReadonlyCutScoreBuffer*) self);
-        if (itr == swingRatingMap.end()) {
-            logger.error("Counter was not found in swingRatingMap!");
+        auto itr = swingRatingMap.find(self);
+        if (itr == swingRatingMap.end())
             return;
-        }
         auto flyingScoreEffect = itr->second;
         swingRatingMap.erase(itr);
 
@@ -178,7 +178,6 @@ MAKE_HOOK_MATCH(
     GlobalNamespace::FlyingScoreSpawner* self,
     GlobalNamespace::FlyingObjectEffect* effect
 ) {
-
     if (currentEffect == (GlobalNamespace::FlyingScoreEffect*) effect) {
         currentEffect->gameObject->active = false;
         currentEffect = nullptr;
