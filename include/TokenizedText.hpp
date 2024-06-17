@@ -79,6 +79,10 @@ class TokenizedText {
                             percentTokens.push_back(i);
                             tokens.emplace_back("");
                             break;
+                        case 'd':
+                            directionTokens.push_back(i);
+                            tokens.emplace_back("");
+                            break;
                         default:
                             // keep % when it doesn't correspond to a key
                             auto str = std::string("%") + current;
@@ -131,6 +135,7 @@ class TokenizedText {
     __SET_TOKEN(afterCutSegment)
     __SET_TOKEN(timeDependencySegment)
     __SET_TOKEN(score)
+    __SET_TOKEN(direction)
 
     std::string original;
     std::vector<std::string> tokens;
@@ -151,4 +156,5 @@ class TokenizedText {
     std::vector<int> afterCutSegmentTokens;
     std::vector<int> timeDependencySegmentTokens;
     std::vector<int> scoreTokens;
+    std::vector<int> directionTokens;
 };

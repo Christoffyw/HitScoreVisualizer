@@ -1,4 +1,6 @@
+#include <cmath>
 #include <iomanip>
+#include <limits>
 #include <sstream>
 
 #include "GlobalNamespace/CutScoreBuffer.hpp"
@@ -11,6 +13,60 @@
 #include "UnityEngine/Mathf.hpp"
 
 using namespace HSV;
+
+enum class Direction { Up, UpRight, Right, DownRight, Down, DownLeft, Left, UpLeft, None };
+
+static float const angle = sqrt(2) / 2;
+
+std::map<Direction, UnityEngine::Vector3> const normalsMap = {
+    {Direction::DownRight, {angle, -angle, 0}},
+    {Direction::Down, {0, -1, 0}},
+    {Direction::DownLeft, {-angle, -angle, 0}},
+    {Direction::Left, {-1, 0, 0}},
+};
+
+Direction GetWrongDirection(GlobalNamespace::NoteCutInfo const& cutInfo) {
+    float best = std::numeric_limits<float>::min();
+    Direction ret = Direction::None;
+    for (auto& [direction, normal] : normalsMap) {
+        float compare = abs(UnityEngine::Vector3::Dot(cutInfo.cutNormal, normal));
+        if (compare > best) {
+            best = compare;
+            ret = direction;
+        }
+    }
+    if (ret == Direction::None)
+        return ret;
+    if (UnityEngine::Vector3::Dot(normalsMap.at(ret), UnityEngine::Vector3::op_Subtraction(cutInfo.notePosition, cutInfo.cutPoint)))
+        return ret;
+    int asInt = (int) ret;
+    if (asInt < 4)
+        return (Direction) (asInt + 4);
+    return (Direction) (asInt - 4);
+}
+
+std::string_view GetDirectionText(Direction wrongDirection) {
+    switch (wrongDirection) {
+        case Direction::Up:
+            return "↑";
+        case Direction::UpRight:
+            return "↗";
+        case Direction::Right:
+            return "→";
+        case Direction::DownRight:
+            return "↘";
+        case Direction::Down:
+            return "↓";
+        case Direction::DownLeft:
+            return "↙";
+        case Direction::Left:
+            return "←";
+        case Direction::UpLeft:
+            return "↖";
+        default:
+            return "";
+    }
+}
 
 Judgement& GetBestJudgement(std::vector<Judgement>& judgements, int comparison) {
     Judgement* best = nullptr;
@@ -46,7 +102,8 @@ std::string TimeDependenceString(float timeDependence) {
     return ss.str();
 }
 
-std::string GetJudgementText(Judgement& judgement, int score, int before, int after, int accuracy, float timeDependence, int maxScore) {
+std::string
+GetJudgementText(Judgement& judgement, int score, int before, int after, int accuracy, float timeDependence, int maxScore, Direction wrongDirection) {
     auto& text = judgement.Text;
 
     text.set_beforeCut(std::to_string(before));
@@ -59,6 +116,7 @@ std::string GetJudgementText(Judgement& judgement, int score, int before, int af
     text.set_accuracySegment(GetBestSegmentText(globalConfig.CurrentConfig->AccuracySegments, accuracy));
     text.set_afterCutSegment(GetBestSegmentText(globalConfig.CurrentConfig->AfterCutAngleSegments, after));
     text.set_timeDependencySegment(GetBestFloatSegmentText(globalConfig.CurrentConfig->TimeDependenceSegments, timeDependence));
+    text.set_direction(GetDirectionText(wrongDirection));
 
     return text.Join();
 }
@@ -94,29 +152,30 @@ void UpdateScoreEffect(
     int after,
     int accuracy,
     float timeDependence,
-    GlobalNamespace::NoteData::ScoringType scoringType
+    GlobalNamespace::NoteData::ScoringType scoringType,
+    Direction wrongDirection
 ) {
     std::string text;
     UnityEngine::Color color;
 
-    int maxScore = GlobalNamespace::ScoreModel::GetNoteScoreDefinition(scoringType)->get_maxCutScore();
+    int maxScore = GlobalNamespace::ScoreModel::GetNoteScoreDefinition(scoringType)->maxCutScore;
 
     if (scoringType == GlobalNamespace::NoteData::ScoringType::BurstSliderElement) {
         auto&& judgement = globalConfig.CurrentConfig->ChainLinkDisplay.value_or(GetBestJudgement(globalConfig.CurrentConfig->Judgements, total));
 
-        text = GetJudgementText(judgement, total, before, after, accuracy, timeDependence, maxScore);
+        text = GetJudgementText(judgement, total, before, after, accuracy, timeDependence, maxScore, wrongDirection);
         color = judgement.Color;
     } else if (scoringType == GlobalNamespace::NoteData::ScoringType::BurstSliderHead) {
         auto& judgementVector = globalConfig.CurrentConfig->ChainHeadJudgements;
         auto& judgement = GetBestJudgement(judgementVector, total);
 
-        text = GetJudgementText(judgement, total, before, after, accuracy, timeDependence, maxScore);
+        text = GetJudgementText(judgement, total, before, after, accuracy, timeDependence, maxScore, wrongDirection);
         color = GetJudgementColor(judgement, judgementVector, total);
     } else {
         auto& judgementVector = globalConfig.CurrentConfig->Judgements;
         auto& judgement = GetBestJudgement(judgementVector, total);
 
-        text = GetJudgementText(judgement, total, before, after, accuracy, timeDependence, maxScore);
+        text = GetJudgementText(judgement, total, before, after, accuracy, timeDependence, maxScore, wrongDirection);
         color = GetJudgementColor(judgement, judgementVector, total);
     }
 
@@ -148,8 +207,9 @@ void Judge(
     int accuracy = cutScoreBuffer->centerDistanceCutScore;
     int total = cutScoreBuffer->cutScore;
     float timeDependence = std::abs(noteCutInfo.cutNormal.z);
+    Direction wrongDirection = GetWrongDirection(noteCutInfo);
 
-    GlobalNamespace::NoteData::ScoringType scoringType = cutScoreBuffer->noteCutInfo.noteData->scoringType;
+    GlobalNamespace::NoteData::ScoringType scoringType = noteCutInfo.noteData->scoringType;
 
-    UpdateScoreEffect(flyingScoreEffect, total, before, after, accuracy, timeDependence, scoringType);
+    UpdateScoreEffect(flyingScoreEffect, total, before, after, accuracy, timeDependence, scoringType, wrongDirection);
 }
