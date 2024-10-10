@@ -137,8 +137,7 @@ void SettingsViewController::DidActivate(bool firstActivation, bool addedToHiera
         });
         BSML::Lite::AddHoverHint(enabledToggle, "With this enabled, the hit scores will not be displayed until the score has been finalized");
 
-        selectedConfig =
-            BSML::Lite::CreateText(textLayout, "Current Config: " + std::filesystem::path(globalConfig.SelectedConfig).stem().string());
+        selectedConfig = BSML::Lite::CreateText(textLayout, "");
 
         configList = BSML::Lite::CreateScrollableCustomSourceList<CustomList*>(container, {50, 50}, [this](int idx) { ConfigSelected(idx); });
     }

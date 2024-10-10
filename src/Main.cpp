@@ -11,6 +11,7 @@
 #include "UnityEngine/SpriteRenderer.hpp"
 #include "beatsaber-hook/shared/config/config-utils.hpp"
 #include "bsml/shared/BSML.hpp"
+#include "custom-types/shared/register.hpp"
 #include "json/DefaultConfig.hpp"
 
 static modloader::ModInfo modInfo = {MOD_ID, VERSION, 0};
@@ -226,6 +227,8 @@ extern "C" void setup(CModInfo* info) {
 
 extern "C" void late_load() {
     il2cpp_functions::Init();
+    custom_types::Register::AutoRegister();
+    BSML::Init();
 
     BSML::Register::RegisterSettingsMenu<HSV::SettingsViewController*>("Hit Score Visualizer");
     BSML::Register::RegisterMainMenu<HSV::SettingsViewController*>("Hit Score Visualizer", "Hit Score Visualizer", "");

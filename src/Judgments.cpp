@@ -37,7 +37,7 @@ Direction GetWrongDirection(GlobalNamespace::NoteCutInfo const& cutInfo) {
     }
     if (ret == Direction::None)
         return ret;
-    if (UnityEngine::Vector3::Dot(normalsMap.at(ret), UnityEngine::Vector3::op_Subtraction(cutInfo.notePosition, cutInfo.cutPoint)))
+    if (UnityEngine::Vector3::Dot(normalsMap.at(ret), UnityEngine::Vector3::op_Subtraction(cutInfo.notePosition, cutInfo.cutPoint)) > 0)
         return ret;
     int asInt = (int) ret;
     if (asInt < 4)
